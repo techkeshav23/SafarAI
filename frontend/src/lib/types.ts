@@ -1,0 +1,115 @@
+export interface AgentStep {
+  type: "thinking" | "tool_call" | "analyzing" | "done" | "error";
+  text: string;
+  tool?: string;
+}
+
+export interface HotelRoom {
+  room_name: string;
+  room_type?: string; // alias for backward compat
+  meal_type: string;
+  total_fare: number;
+  total_tax: number;
+  is_refundable: boolean;
+  booking_code: string | null;
+  inclusion?: string;
+  cancel_policies: unknown[];
+  day_rates: unknown[];
+  promotions?: unknown[];
+}
+
+export interface Hotel {
+  id: string;
+  name: string;
+  city: string;
+  country: string;
+  description: string;
+  price_per_night: number;
+  total_fare?: number;
+  currency?: string;
+  tax?: number;
+  rating: number;
+  star_rating?: number;
+  amenities: string[];
+  image_url: string;
+  latitude: number;
+  longitude: number;
+  style_tags: string[];
+  match_score?: number;
+  match_reason?: string;
+  // TBO-specific
+  result_index?: number;
+  hotel_code?: string;
+  booking_code?: string | null;
+  rooms?: HotelRoom[];
+  source?: "tbo" | "mock" | string;
+}
+
+export interface Flight {
+  id: string;
+  airline: string;
+  carrier_code?: string; // e.g. "AI", "UK", "6E"
+  origin: string;
+  destination: string;
+  departure_time: string;
+  arrival_time: string;
+  price: number;
+  duration_hours: number;
+  stops: number;
+  match_score?: number;
+  flight_number?: string;
+  source?: string;
+}
+
+export interface Activity {
+  id: string;
+  name: string;
+  city: string;
+  country: string;
+  description: string;
+  price: number;
+  duration_hours: number;
+  category: string;
+  rating: number;
+  image_url: string;
+  match_score?: number;
+}
+
+export interface TripPlan {
+  summary: string;
+  steps?: AgentStep[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  actions?: { type: string; [key: string]: any }[];
+  destination: string;
+  origin?: string;
+  check_in?: string; // Top-level (often global trip date)
+  check_out?: string;
+  
+  // Search params specifically used to fetch this result (e.g. resolved cityId)
+  search_params?: {
+      cityId?: string;
+      check_in?: string; 
+      check_out?: string;
+  };
+
+  hotels?: Hotel[];
+  flights?: Flight[];
+  activities?: Activity[];
+  
+  dates_suggestion?: string;
+  total_estimated_cost?: number;
+  ai_reasoning?: string;
+  data_source?: "tbo_live" | "mock";
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  tripPlan?: TripPlan;
+  imageSearch?: {
+    extracted_tags: string[];
+    hotels: Hotel[];
+  };
+  timestamp: Date;
+}

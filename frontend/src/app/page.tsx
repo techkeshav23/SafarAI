@@ -1,0 +1,290 @@
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+import { Navbar } from "@/components/Navbar";
+import { RefinedFilters, FilterData, FilterInitialData } from "@/components/RefinedFilters";
+import { MapView } from "@/components/MapView";
+import { ChatAssistant } from "@/components/ChatAssistant";
+import { ResultsPanel } from "@/components/ResultsPanel";
+import { searchTravel, searchHotels } from "@/lib/api";
+import { TripPlan } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+import { HeroLanding } from "@/components/HeroLanding";
+
+export default function Home() {
+  const [activeTab, setActiveTab] = useState("flights");
+  const [isLoading, setIsLoading] = useState(false);
+  const [tripPlan, setTripPlan] = useState<TripPlan | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined);
+  const [mapZoom, setMapZoom] = useState<number | undefined>(undefined);
+  const [showHero, setShowHero] = useState(true);
+
+  // Keep the original (unfiltered) trip plan so filters work client-side
+  const originalTripPlan = useRef<TripPlan | null>(null);
+  // Track the dates that were last fetched from the API
+  const lastFetchedDates = useRef<{ checkIn: string; checkOut: string }>({ checkIn: "", checkOut: "" });
+
+  // Derive filter initial data from tripPlan
+  const filterInitialData: FilterInitialData | undefined = tripPlan ? {
+    destination: tripPlan.destination !== "Multiple" ? tripPlan.destination : undefined,
+    origin: tripPlan.origin || tripPlan.flights?.[0]?.origin || undefined,
+    checkIn: tripPlan.check_in || undefined,
+    checkOut: tripPlan.check_out || undefined,
+  } : undefined;
+
+  const processResults = useCallback((plan: TripPlan | null) => {
+    // Save the original unfiltered results for client-side filtering
+    originalTripPlan.current = plan;
+    // Remember the dates that were fetched so we can detect changes
+    if (plan) {
+      lastFetchedDates.current = {
+        checkIn: plan.check_in || "",
+        checkOut: plan.check_out || "",
+      };
+    }
+    setTripPlan(plan);
+    if (plan) {
+      setShowHero(false);
+      // Auto-move map logic
+      if (plan.actions) {
+        const flyAction = plan.actions.find(a => a.type === 'fly_to');
+        if (flyAction && typeof flyAction.lat === 'number' && typeof flyAction.lng === 'number') {
+          setMapCenter([flyAction.lat, flyAction.lng]);
+          if (flyAction.zoom) setMapZoom(flyAction.zoom);
+        }
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  /* Direct search from landing page search bar */
+  const handleDirectSearch = useCallback(async (query: string) => {
+    setIsLoading(true);
+    try {
+      const result = await searchTravel(query);
+      processResults(result);
+    } catch {
+      setIsLoading(false);
+    }
+  }, [processResults]);
+
+  /* Chat assistant results callback */
+  const handleSearchResults = useCallback((plan: TripPlan | null) => {
+    processResults(plan);
+  }, [processResults]);
+
+  const handleLoadingChange = useCallback((loading: boolean) => {
+    setIsLoading(loading);
+  }, []);
+
+  const handleHotelDateUpdate = useCallback(async (newCheckIn: string, newCheckOut: string) => {
+    if (!tripPlan) return;
+
+    // Use city code if available from previous backend search
+    const cityId = tripPlan.search_params?.cityId;
+
+    if (!cityId) {
+        console.warn("Cannot update hotels: Missing City ID in tripPlan data.");
+        return; 
+    }
+
+    setIsLoading(true);
+
+    // Call API just for hotels
+    try {
+        const response: any = await searchHotels({
+            cityCode: cityId,
+            checkIn: newCheckIn,
+            checkOut: newCheckOut,
+            rooms: 1, 
+            adults: 2
+        });
+        
+        // The API returns { count, hotels: [...], ... }
+        // We need to update tripPlan
+        const updatedHotels = response.hotels || [];
+        const updatedSearchParams = {
+          ...tripPlan.search_params,
+          check_in: newCheckIn,
+          check_out: newCheckOut
+        };
+
+        setTripPlan(prev => {
+            if (!prev) return null;
+            const newPlan = {
+                ...prev,
+                hotels: updatedHotels,
+                search_params: updatedSearchParams
+            };
+            
+            // IMPORTANT: Update the reference used by client-side filters 
+            // so that if user changes budget later, we don't revert to old hotels
+            if (originalTripPlan.current) {
+                originalTripPlan.current = {
+                    ...originalTripPlan.current,
+                    hotels: updatedHotels,
+                    search_params: updatedSearchParams
+                };
+            }
+            
+            return newPlan;
+        });
+
+    } catch (err) {
+        console.error("Failed to update hotels:", err);
+    } finally {
+        setIsLoading(false);
+    }
+  }, [tripPlan]);
+
+  /*
+   * Hybrid filtering:
+   *  - Date change → re-fetch hotels from API (availability is date-dependent)
+   *  - Budget / text change only → instant client-side filter (no API call)
+   */
+  const handleApplyFilters = useCallback(
+    async (filters: FilterData) => {
+      const base = originalTripPlan.current;
+      if (!base) return;
+
+      const datesChanged =
+        (filters.departureDate && filters.departureDate !== lastFetchedDates.current.checkIn) ||
+        (filters.returnDate && filters.returnDate !== lastFetchedDates.current.checkOut);
+
+      let workingPlan = { ...base };
+
+      // ── If dates changed, re-fetch hotels for the new dates ──
+      if (datesChanged && filters.to) {
+        setIsLoading(true);
+        try {
+          // Build a query that includes destination + new dates so the agent uses them
+          const query = `hotels in ${filters.to}${filters.from ? ` from ${filters.from}` : ""} check-in ${filters.departureDate} check-out ${filters.returnDate}`;
+          const freshResult = await searchTravel(query);
+          if (freshResult) {
+            // Merge: keep original flights/activities, replace hotels with fresh results
+            workingPlan = {
+              ...base,
+              hotels: freshResult.hotels || [],
+              check_in: filters.departureDate,
+              check_out: filters.returnDate,
+              data_source: freshResult.data_source || base.data_source,
+            };
+            // Update the "original" baseline with fresh hotel data
+            originalTripPlan.current = workingPlan;
+            lastFetchedDates.current = {
+              checkIn: filters.departureDate,
+              checkOut: filters.returnDate,
+            };
+          }
+        } catch (err) {
+          console.error("Date re-fetch failed, applying client-side only:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+
+      // ── Client-side filters (always applied) ──
+      const filtered = { ...workingPlan };
+
+      // Filter hotels by budget
+      if (filters.budgetMax && filters.budgetMax < 200000) {
+        filtered.hotels = (workingPlan.hotels || []).filter(
+          (h) => (h.price_per_night || h.total_fare || 0) <= filters.budgetMax
+        );
+      }
+
+      // Filter flights by origin / destination text
+      if (filters.from || filters.to) {
+        filtered.flights = (workingPlan.flights || []).filter((f) => {
+          const matchFrom = !filters.from || f.origin.toLowerCase().includes(filters.from.toLowerCase());
+          const matchTo = !filters.to || f.destination.toLowerCase().includes(filters.to.toLowerCase());
+          return matchFrom && matchTo;
+        });
+      }
+
+      // Sync display dates
+      if (filters.departureDate) filtered.check_in = filters.departureDate;
+      if (filters.returnDate) filtered.check_out = filters.returnDate;
+
+      setTripPlan(filtered);
+    },
+    [/* stable refs only */]
+  );
+
+  const mapHotels = tripPlan?.hotels || [];
+  const mapDestination = tripPlan?.destination || null;
+
+  return (
+    <div className="h-screen flex flex-col bg-background overflow-hidden font-sans">
+      
+      {/* 1. Navbar (Sticky Top) */}
+      <Navbar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
+        transparent={showHero} 
+      />
+
+      {/* 2. Horizontal Filter Bar (Only visible when not in Hero mode) */}
+      {!showHero && (
+        <div className="z-40 border-b border-border shadow-sm pt-20">
+            <RefinedFilters onApplyFilters={handleApplyFilters} initialData={filterInitialData} />
+        </div>
+      )}
+
+      {/* 3. Main Split View Area */}
+      <div className="flex flex-1 overflow-hidden relative">
+        
+        {/* Left Panel: Search Results (Visible only when not in Hero mode) */}
+        {!showHero && (
+            <div className="h-full z-30 shrink-0">
+                <ResultsPanel 
+                    tripPlan={tripPlan} 
+                    isLoading={isLoading} 
+                    onHotelDateChange={handleHotelDateUpdate}
+                />
+            </div>
+        )}
+
+        {/* Right Panel / Main Area: Map or Hero */}
+        <main className={cn(
+          "flex-1 relative w-full h-full",
+          showHero ? "overflow-y-auto" : "overflow-hidden"
+        )}>
+          {showHero ? (
+            <HeroLanding
+              onSearch={handleDirectSearch}
+              isLoading={isLoading}
+            />
+          ) : (
+            <div className="w-full h-full relative">
+              {/* Floating Destination Pill */}
+              {mapDestination && mapDestination !== "Multiple" && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-md shadow-lg border border-gray-100 rounded-full px-5 py-2 flex items-center gap-2.5 animate-in slide-in-from-top-2 duration-300 pointer-events-none">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                  <span className="text-sm font-bold text-gray-800 tracking-tight">
+                    Exploring {mapDestination}
+                  </span>
+                </div>
+              )}
+              
+              <MapView 
+                hotels={mapHotels} 
+                destination={mapDestination} 
+                center={mapCenter}
+                zoom={mapZoom}
+              />
+            </div>
+          )}
+        </main>
+
+        {/* Chat Assistant (Always Floating) */}
+        <ChatAssistant 
+          onSearchResults={handleSearchResults} 
+          onLoadingChange={handleLoadingChange}
+          isLoading={isLoading} 
+        />
+      </div>
+    </div>
+  );
+}
