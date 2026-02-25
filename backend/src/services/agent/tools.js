@@ -1,7 +1,7 @@
 // ─── Tool Executors ─────────────────────────────────────────────
 import { searchActivities } from "../searchEngine.js";
-import { searchAmadeusFlights } from "../amadeusApi.js";
-import { searchHotels as tboSearchHotels, getHotelCodeBatch } from "../tboApi.js";
+import { searchTboFlights } from "../tboAirApi.js"; // Switched to TBO
+import { searchHotels as tboSearchHotels, getHotelCodeBatch, getCachedHotelDetailsMap } from "../tboApi.js";
 import { generateMockHotels } from "../mockHotels.js";
 import { getCityCode } from "../cityResolver.js";
 import {
@@ -32,24 +32,11 @@ export async function executeSearchHotels(args, collected) {
     const dateAttempts = [
       { checkIn, checkOut },
     ];
-    const addShifted = (daysShift) => {
-      const ci = new Date(checkIn);
-      ci.setDate(ci.getDate() + daysShift);
-      const co = new Date(checkOut);
-      co.setDate(co.getDate() + daysShift);
-      dateAttempts.push({
-        checkIn: ci.toISOString().split("T")[0],
-        checkOut: co.toISOString().split("T")[0],
-      });
-    };
-    addShifted(1);
-    addShifted(3);
-    addShifted(7);
 
     for (const attempt of dateAttempts) {
-      // Retry up to 2 times per date with different random code batches
+      // Retry up to 1 time per date with different random code batches
       // (TBO returns 500 when random codes include bad/expired ones)
-      const CODE_RETRIES = 2;
+      const CODE_RETRIES = 1;
       for (let codeRetry = 0; codeRetry < CODE_RETRIES; codeRetry++) {
         try {
           const hotelCodes = await getHotelCodeBatch(cityCode);
@@ -82,11 +69,33 @@ export async function executeSearchHotels(args, collected) {
           );
 
           if (hotelResults.length > 0) {
-            const limitedResults = hotelResults.slice(0, 20);
-            const returnedCodes = limitedResults.map((h) => String(h.HotelCode));
-            const detailsMap = await fetchHotelDetailsMap(returnedCodes);
+            // Processing ALL results - user requested no slicing
+            const returnedCodes = hotelResults.map((h) => String(h.HotelCode));
+            const detailsMap = await fetchHotelDetailsMap(returnedCodes, cityCode);
 
-            hotels = limitedResults.map((h) => transformTboHotel(h, detailsMap, destination));
+            hotels = hotelResults.map((h) => transformTboHotel(h, detailsMap, destination));
+            
+            // Filter by budget
+            if (args.budget_max || args.total_budget) {
+                const oneDay = 24 * 60 * 60 * 1000;
+                const date1 = new Date(usedCheckIn);
+                const date2 = new Date(usedCheckOut);
+                const nights = Math.max(1, Math.round(Math.abs((date1 - date2) / oneDay)));
+                
+                let maxNightly = Number.MAX_SAFE_INTEGER;
+                if (args.budget_max) {
+                    maxNightly = Number(args.budget_max);
+                } else if (args.total_budget) {
+                    // Heuristic: Max 60% of total budget for hotel stay
+                    const hotelBudget = Number(args.total_budget) * 0.6;
+                    maxNightly = hotelBudget / nights;
+                }
+                
+                const before = hotels.length;
+                hotels = hotels.filter(h => h.price_per_night <= maxNightly);
+                console.log(`[Agent] Filtered hotels by budget (Max/Night: ${Math.round(maxNightly)}): ${before} -> ${hotels.length}`);
+            }
+
             source = "tbo_live";
             usedCheckIn = attempt.checkIn;
             usedCheckOut = attempt.checkOut;
@@ -132,7 +141,7 @@ export async function executeSearchHotels(args, collected) {
         check_out: usedCheckOut,
         cityId: cityCode
     },
-    hotels: hotels.slice(0, 10).map((h) => ({
+    hotels: hotels.map((h) => ({
       name: h.name,
       city: h.city,
       price_per_night: h.price_per_night,
@@ -148,7 +157,8 @@ export async function executeSearchHotels(args, collected) {
 }
 
 export async function executeSearchFlights(args, collected) {
-  const destination = args.destination || "";
+  // If destination_iata provided (e.g. SXR), use it as destination string which resolveIATA will accept directly.
+  const destination = args.destination_iata || args.destination || "";
   const origin =
     args.origin ||
     collected.origin ||
@@ -158,10 +168,11 @@ export async function executeSearchFlights(args, collected) {
     args.departure_date || collected.check_in || getDefaultCheckIn();
 
   let flights = [];
-  let source = "amadeus";
+  let source = "tbo_air"; // Switched to TBO
 
   try {
-    const amadeusFlights = await searchAmadeusFlights({
+    // ─── Switched to TBO Search ─────────────────────────────────
+    const tboFlights = await searchTboFlights({
       origin,
       destination,
       departureDate,
@@ -169,36 +180,52 @@ export async function executeSearchFlights(args, collected) {
       adults: args.adults || 1,
       maxResults: 250,
     });
-    if (amadeusFlights.length > 0) {
-      console.log(`[Agent] Amadeus returned ${amadeusFlights.length} flights`);
+    
+    if (tboFlights.length > 0) {
+      console.log(`[Agent] TBO returned ${tboFlights.length} flights`);
 
       // Dedup true duplicates (same flight + same price + same cabin)
-      // but keep genuinely different fare variants
       const seen = new Set();
       const unique = [];
-      for (const f of amadeusFlights) {
+      for (const f of tboFlights) {
+        // TBO uses TraceId+ResultIndex as unique ID, but we can also dedup by content
+        // to avoid showing identical flight options if any
         const key = [
           f.carrier_code, f.flight_number,
           f.departure_time, f.arrival_time,
-          f.price, f.cabin_class, f.stops
+          f.price, f.cabin_class
         ].join("|");
+        
         if (!seen.has(key)) {
           seen.add(key);
           unique.push(f);
         }
       }
-      console.log(`[Agent] After dedup: ${unique.length} unique flights`);
+      // console.log(`[Agent] After dedup: ${unique.length} unique flights`);
       flights = unique.sort((a, b) => a.price - b.price);
+
+      // NEW: Budget Filter
+      if (args.total_budget) {
+        // Heuristic: Flight typically takes 40-60% of budget. 
+        // Let's cap flight cost at 70% of total budget to leave room for hotels/activities.
+        const budget = Number(args.total_budget);
+        const maxFlightPrice = budget * 0.70; 
+        
+        const beforeCount = flights.length;
+        flights = flights.filter(f => f.price <= maxFlightPrice);
+        console.log(`[Agent] Flight Budget Filter (Max ${Math.round(maxFlightPrice)}): ${beforeCount} -> ${flights.length}`);
+      }
     } else {
-      console.warn("[Agent] Amadeus returned 0 flights");
+      console.warn("[Agent] TBO returned 0 flights");
     }
   } catch (err) {
-    console.error("[Agent] Amadeus flight search error:", err.message);
+    console.error("[Agent] TBO flight search error:", err.message);
   }
 
   collected.flights = flights;
   if (!collected.destination) collected.destination = destination;
   if (!collected.origin) collected.origin = origin;
+  collected.dataSource = "tbo_air"; // Mark source
 
   // Return compact summary for the LLM to reason about, but we've stored full list in 'collected'
   return {
@@ -207,7 +234,7 @@ export async function executeSearchFlights(args, collected) {
     // Give LLM a decent chunk but not overwhelming, e.g. 50
     flights: flights.slice(0, 50).map((f) => ({ 
       airline: f.airline,
-      carrier_code: f.carrier_code,
+      flight_number: f.flight_number,
       origin: f.origin,
       destination: f.destination,
       price: f.price,
@@ -245,30 +272,35 @@ export async function executeSearchActivities(args, collected) {
 
 // ─── Super Tool Executor ────────────────────────────────────────
 
-// For "plan_trip", we run both flight and hotel search sequentially or parallel
+// For "plan_trip", we run ONLY hotel search to be fast, and return a flag for client-side flight fetching
 export async function executePlanTrip(args, collected) {
   console.log(`[Agent Tool] executePlanTrip called. Destination: ${args.destination}`);
   
-  const [flightRes, hotelRes] = await Promise.all([
-     executeSearchFlights({
-       destination: args.destination,
-       origin: args.origin,
-       departure_date: args.start_date,
-       return_date: args.end_date,
-       adults: args.adults
-     }, collected),
-     executeSearchHotels({
+  // 1. Run Hotel Search (Fast)
+  const hotelRes = await executeSearchHotels({
        destination: args.destination,
        check_in: args.start_date,
        check_out: args.end_date,
-       adults: args.adults
-     }, collected)
-  ]);
-  
+       adults: args.adults,
+       total_budget: args.total_budget
+     }, collected);
+
+  // 2. Setup Flush for Client-Side Flight Search
+  collected.flights = []; 
+  collected.fetchFlightsAsync = true; // Flag for UI
+  collected.flightParams = {
+       origin: args.origin || collected.origin,
+       destination: args.destination,
+       departureDate: args.start_date,
+       returnDate: args.end_date,
+       adults: args.adults,
+       total_budget: args.total_budget
+  };
+
   return {
-    flights: flightRes,
+    flights: [],
     hotels: hotelRes,
-    message: "Searched for both flights and hotels."
+    message: "Searched for hotels. Flights will be loaded asynchronously."
   };
 }
 

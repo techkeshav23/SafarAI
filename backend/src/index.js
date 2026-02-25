@@ -7,7 +7,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import searchRouter from "./routes/search.js";
 import bookingRouter from "./routes/booking.js";
-import dataRouter from "./routes/data.js";
 
 // Note: agentService.js calls dotenv.config() at module level,
 // so env vars are available by the time any route handler executes.
@@ -29,7 +28,6 @@ app.use(express.json());
 // Routes
 app.use("/api/search", searchRouter);
 app.use("/api/booking", bookingRouter);
-app.use("/api/data", dataRouter);
 
 app.get("/", (req, res) => {
   res.json({ message: "Voyehack Travel Search API is running" });

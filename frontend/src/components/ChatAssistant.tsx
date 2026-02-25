@@ -49,9 +49,10 @@ interface ChatAssistantProps {
   onSearchResults: (plan: TripPlan | null) => void;
   onLoadingChange: (loading: boolean) => void;
   isLoading: boolean;
+  onSearch?: (query: string, history?: Array<{role: string; content: string}>) => Promise<TripPlan>;
 }
 
-export function ChatAssistant({ onSearchResults, onLoadingChange, isLoading }: ChatAssistantProps) {
+export function ChatAssistant({ onSearchResults, onLoadingChange, isLoading, onSearch }: ChatAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -124,7 +125,10 @@ export function ChatAssistant({ onSearchResults, onLoadingChange, isLoading }: C
     onLoadingChange(true);
 
     try {
-      const result = await searchTravel(query, undefined, history); 
+      // Use provided onSearch handler (e.g. for parallel flights), or fallback to direct API
+      const result = onSearch 
+        ? await onSearch(query, history)
+        : await searchTravel(query, undefined, history); 
       
       onSearchResults(result);
 

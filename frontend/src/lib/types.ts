@@ -22,6 +22,7 @@ export interface Hotel {
   id: string;
   name: string;
   city: string;
+  address?: string;
   country: string;
   description: string;
   price_per_night: number;
@@ -37,6 +38,8 @@ export interface Hotel {
   style_tags: string[];
   match_score?: number;
   match_reason?: string;
+  check_in?: string;
+  check_out?: string;
   // TBO-specific
   result_index?: number;
   hotel_code?: string;
@@ -92,6 +95,8 @@ export interface TripPlan {
       check_out?: string;
   };
 
+  fetch_flights_async?: boolean;
+  flight_search_params?: unknown; // Could be any object passed to search_flights
   hotels?: Hotel[];
   flights?: Flight[];
   activities?: Activity[];

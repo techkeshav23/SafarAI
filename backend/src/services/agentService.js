@@ -41,6 +41,7 @@ const AGENT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
  */
 export async function runAgent(query, history = []) {
   const steps = [];
+  const iterations = 1; // Single-turn execution
   const collected = {
     hotels: [],
     flights: [],
@@ -77,70 +78,55 @@ export async function runAgent(query, history = []) {
         role: msg.role === "assistant" ? "model" : "user",
         parts: [{ text: msg.content }],
       }));
-
+    
+    // We start the chat only to get the *initial* response with tool calls.
+    // We now skip the feedback loop entirely to save time.
     const chat = model.startChat({ history: chatHistory });
 
     console.log("[Agent] Sending query to Gemini...");
     // Send user query
     let result = await chat.sendMessage(query);
     console.log("[Agent] Gemini response received.");
-    let response = result.response;
+    
+    // Parse response
+    const response = result.response;
+    const functionCalls = response.functionCalls();
 
-    // Agent loop — handle function calls iteratively
-    let iterations = 0;
-    const MAX_ITERATIONS = 5;
+    let summary = response.text() || "Finding the best options for you...";
 
-    while (iterations < MAX_ITERATIONS) {
-      console.log(`[Agent] Iteration ${iterations + 1}: Checking function calls...`);
-      const functionCalls = response.functionCalls();
-      if (!functionCalls || functionCalls.length === 0) {
-          console.log("[Agent] No function calls found. Loop ending.");
-          break;
-      }
+    // If Gemini wants to call tools, do it ONCE and return immediately.
+    if (functionCalls && functionCalls.length > 0) {
+      console.log(`[Agent] Found ${functionCalls.length} function calls. Executing and returning immediately.`);
       
-      console.log(`[Agent] Found ${functionCalls.length} function calls:`, functionCalls.map(f => f.name));
-
-      // Execute all function calls in parallel for speed
-      const toolResponses = await Promise.all(
+      // Execute all function calls in parallel
+      await Promise.all(
         functionCalls.map(async (call) => {
           steps.push({
             type: "tool_call",
             tool: call.name,
-            text: getStepText(call.name, call.args),
+            text: getStepText(call.name, call.args), // e.g. "Searching flights to Dubai..."
           });
 
-          const toolResult = await executeTool(
-            call.name,
-            call.args,
-            collected
-          );
-
-          return {
-            functionResponse: {
-              name: call.name,
-              response: toolResult,
-            },
-          };
+          // Execute the tool (TBO API, etc.)
+          // This populates the 'collected' object with real data
+          await executeTool(call.name, call.args, collected);
         })
       );
 
-      steps.push({
-        type: "analyzing",
-        text: "Analyzing results and comparing options...",
-      });
-
-      // Send tool results back to Gemini for synthesis
-      result = await chat.sendMessage(toolResponses);
-      response = result.response;
-      iterations++;
+      // Now we have the data in 'collected'. We DON'T send it back to Gemini.
+      // We just compose a simple success message for the UI.
+      
+      // If we found results, update the summary to be helpful but generic
+      if (collected.flights.length > 0 || collected.hotels.length > 0 || collected.activities.length > 0) {
+          summary = `I found ${collected.flights.length ? collected.flights.length + " flights" : ""} ${collected.flights.length && collected.hotels.length ? "and" : ""} ${collected.hotels.length ? collected.hotels.length + " hotels" : ""} for your trip. Check them out below!`;
+      } else {
+          summary = "I looked for options but couldn't find exact matches right now. Try adjusting your dates or destination.";
+      }
     }
-
-    const summary =
-      response.text() || "Here are the best options I found for you!";
 
     steps.push({
       type: "done",
-      text: "Done! Here are your personalized results.",
+      text: "Done! Here are your results.",
     });
 
     const actions = buildMapActions(collected);
@@ -156,6 +142,8 @@ export async function runAgent(query, history = []) {
       search_params: collected.search_params,
       hotels: collected.hotels,
       flights: collected.flights,
+      fetch_flights_async: collected.fetchFlightsAsync || false,
+      flight_search_params: collected.flightParams || null,
       activities: collected.activities,
       actions,
       total_estimated_cost: estimateCost(collected),

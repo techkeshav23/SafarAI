@@ -6,7 +6,7 @@ import { RefinedFilters, FilterData, FilterInitialData } from "@/components/Refi
 import { MapView } from "@/components/MapView";
 import { ChatAssistant } from "@/components/ChatAssistant";
 import { ResultsPanel } from "@/components/ResultsPanel";
-import { searchTravel, searchHotels } from "@/lib/api";
+import { searchTravel, searchHotels, searchFlights } from "@/lib/api";
 import { TripPlan } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ import { HeroLanding } from "@/components/HeroLanding";
 export default function Home() {
   const [activeTab, setActiveTab] = useState("flights");
   const [isLoading, setIsLoading] = useState(false);
+  const [flightsLoading, setFlightsLoading] = useState(false);
   const [tripPlan, setTripPlan] = useState<TripPlan | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined);
   const [mapZoom, setMapZoom] = useState<number | undefined>(undefined);
@@ -33,9 +34,11 @@ export default function Home() {
     checkOut: tripPlan.check_out || undefined,
   } : undefined;
 
-  const processResults = useCallback((plan: TripPlan | null) => {
+  const processResults = useCallback(async (plan: TripPlan | null) => {
     // Save the original unfiltered results for client-side filtering
+    // (This might be temporarily incomplete if async/await is still running)
     originalTripPlan.current = plan;
+    
     // Remember the dates that were fetched so we can detect changes
     if (plan) {
       lastFetchedDates.current = {
@@ -43,7 +46,10 @@ export default function Home() {
         checkOut: plan.check_out || "",
       };
     }
+    
     setTripPlan(plan);
+    setIsLoading(false); // Stop main loader immediately
+
     if (plan) {
       setShowHero(false);
       // Auto-move map logic
@@ -51,11 +57,39 @@ export default function Home() {
         const flyAction = plan.actions.find(a => a.type === 'fly_to');
         if (flyAction && typeof flyAction.lat === 'number' && typeof flyAction.lng === 'number') {
           setMapCenter([flyAction.lat, flyAction.lng]);
-          if (flyAction.zoom) setMapZoom(flyAction.zoom);
+          setMapZoom(flyAction.zoom || 12);
         }
       }
+
+      // ──────────────────────────────────────────────
+      // Async Flight Fetching (for speed)
+      // ──────────────────────────────────────────────
+      if (plan.fetch_flights_async && plan.flight_search_params) {
+          console.log("Triggering async flight search...");
+          setFlightsLoading(true);
+          try {
+              // Fetch flights separately
+              const flightResponse = await searchFlights(plan.flight_search_params);
+              const flights = flightResponse.flights || [];
+              
+              // Merge into existing plan
+              setTripPlan(prev => {
+                  if (!prev) return null;
+                  const updated = { 
+                      ...prev, 
+                      flights: flights, 
+                      fetch_flights_async: false // Mark done
+                  };
+                  originalTripPlan.current = updated;
+                  return updated;
+              });
+          } catch (err) {
+              console.error("Async flight search failed:", err);
+          } finally {
+              setFlightsLoading(false);
+          }
+      }
     }
-    setIsLoading(false);
   }, []);
 
   /* Direct search from landing page search bar */
@@ -241,6 +275,7 @@ export default function Home() {
                 <ResultsPanel 
                     tripPlan={tripPlan} 
                     isLoading={isLoading} 
+                    flightsLoading={flightsLoading}
                     onHotelDateChange={handleHotelDateUpdate}
                 />
             </div>
@@ -258,12 +293,21 @@ export default function Home() {
             />
           ) : (
             <div className="w-full h-full relative">
+              {/* Top gradient overlay for visual depth */}
+              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/[0.03] to-transparent z-[500] pointer-events-none" />
+
               {/* Floating Destination Pill */}
               {mapDestination && mapDestination !== "Multiple" && (
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-md shadow-lg border border-gray-100 rounded-full px-5 py-2 flex items-center gap-2.5 animate-in slide-in-from-top-2 duration-300 pointer-events-none">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-xl shadow-lg shadow-black/5 border border-white/60 rounded-full px-5 py-2.5 flex items-center gap-3 animate-in slide-in-from-top-2 duration-500 pointer-events-none">
+                  <div className="relative flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />
+                    <div className="absolute w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping opacity-50" />
+                  </div>
                   <span className="text-sm font-bold text-gray-800 tracking-tight">
                     Exploring {mapDestination}
+                  </span>
+                  <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    {mapHotels.filter(h => h.latitude && h.longitude).length} pins
                   </span>
                 </div>
               )}

@@ -17,17 +17,24 @@ import {
   Calendar,
   Filter,
   Maximize2,
-  Minimize2
+  Minimize2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Star
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import ReactMarkdown from "react-markdown";
 
 interface ResultsPanelProps {
   isLoading: boolean;
+  flightsLoading?: boolean;
   tripPlan: TripPlan | null;
   className?: string;
   onHotelDateChange?: (checkIn: string, checkOut: string) => Promise<void>;
@@ -35,6 +42,7 @@ interface ResultsPanelProps {
 
 export function ResultsPanel({
   isLoading,
+  flightsLoading = false,
   tripPlan,
   className,
   onHotelDateChange,
@@ -47,6 +55,10 @@ export function ResultsPanel({
   const [localCheckIn, setLocalCheckIn] = useState<string>("");
   const [localCheckOut, setLocalCheckOut] = useState<string>("");
   const [isUpdatingHotels, setIsUpdatingHotels] = useState(false);
+
+  // Hotel sort & filter
+  const [hotelSort, setHotelSort] = useState<"default" | "price-asc" | "price-desc" | "rating-desc">("default");
+  const [hotelPriceRange, setHotelPriceRange] = useState<{ min: number; max: number } | null>(null);
 
   // Initialize hotel dates when tripPlan loads
   useEffect(() => {
@@ -87,12 +99,35 @@ export function ResultsPanel({
     }
   }, [tripPlan]);
 
+  // Derive sorted & filtered hotels
+  const sortedHotels = (() => {
+    let list = [...(tripPlan?.hotels || [])];
+    
+    // Price range filter
+    if (hotelPriceRange) {
+      list = list.filter(h => (h.price_per_night || 0) >= hotelPriceRange.min && (h.price_per_night || 0) <= hotelPriceRange.max);
+    }
+    // Sort
+    switch (hotelSort) {
+      case "price-asc":
+        list.sort((a, b) => (a.price_per_night || 0) - (b.price_per_night || 0));
+        break;
+      case "price-desc":
+        list.sort((a, b) => (b.price_per_night || 0) - (a.price_per_night || 0));
+        break;
+      case "rating-desc":
+        list.sort((a, b) => (b.star_rating || b.rating || 0) - (a.star_rating || a.rating || 0));
+        break;
+    }
+    return list;
+  })();
+
   const totalHotels = tripPlan?.hotels?.length || 0;
   const totalFlights = tripPlan?.flights?.length || 0;
   const totalActivities = tripPlan?.activities?.length || 0;
 
   const tabs = [
-    { id: "flights", label: `Flights`, count: totalFlights, icon: Plane },
+    { id: "flights", label: `Flights`, count: flightsLoading ? undefined : totalFlights, icon: flightsLoading ? Loader2 : Plane },
     { id: "hotels", label: `Hotels`, count: totalHotels, icon: Hotel },
     { id: "activities", label: `Activities`, count: totalActivities, icon: MapPin },
   ];
@@ -157,7 +192,7 @@ export function ResultsPanel({
                 {/* Summary removed */}
 
                 {/* Flights */}
-                {(activeTab === 'flights') && totalFlights > 0 && (
+                {(activeTab === 'flights') && (totalFlights > 0 || flightsLoading) && (
                    <div className="flex gap-4 items-start">
                         {/* Filters Sidebar */}
                         <div className="hidden md:block border-r border-border pr-4 sticky top-0 max-h-[calc(100vh-160px)] overflow-y-auto w-[240px] shrink-0">
@@ -169,20 +204,36 @@ export function ResultsPanel({
 
                         <div className="flex-1 w-full min-w-0">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-semibold flex items-center gap-2"><Plane className="w-4 h-4 text-sky-500" /> Flights</h3>
-                                <Badge variant="secondary" className="text-xs font-normal">{filteredFlights.length} options</Badge>
+                                <h3 className="font-semibold flex items-center gap-2">
+                                  {flightsLoading ? <Loader2 className="w-4 h-4 animate-spin text-sky-500" /> : <Plane className="w-4 h-4 text-sky-500" />} 
+                                  Flights
+                                </h3>
+                                <Badge variant="secondary" className="text-xs font-normal">
+                                  {flightsLoading ? "Searching..." : `${filteredFlights.length} options`}
+                                </Badge>
                             </div>
-                            <div className="space-y-3">
-                                {filteredFlights.length > 0 ? (
-                                    filteredFlights.map((flight, idx) => (
-                                        <FlightCard key={idx} flight={flight} />
-                                    ))
-                                ) : (
-                                    <div className="text-center py-10 text-muted-foreground text-sm">
-                                        No flights match your filters.
+
+                            {flightsLoading ? (
+                                <div className="flex flex-col items-center justify-center py-12 space-y-4 text-muted-foreground animate-pulse border rounded-xl border-dashed bg-muted/30">
+                                    <Plane className="w-12 h-12 text-sky-200" />
+                                    <div className="text-center space-y-1">
+                                        <p className="text-sm font-medium text-foreground">Fetching live flight prices...</p>
+                                        <p className="text-xs">Checking airlines for the best deals</p>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {filteredFlights.length > 0 ? (
+                                        filteredFlights.map((flight, idx) => (
+                                            <FlightCard key={idx} flight={flight} />
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 text-muted-foreground text-sm">
+                                            No flights match your filters.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                    </div>
                 )}
@@ -190,66 +241,137 @@ export function ResultsPanel({
 
                 {/* Hotels */}
                 {(activeTab === 'hotels') && (
-                   <div className="space-y-4">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-background/95 backdrop-blur z-20 pb-2 border-b border-border">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-semibold flex items-center gap-2"><Hotel className="w-4 h-4 text-emerald-500" /> Hotels</h3>
-                                <Badge variant="secondary" className="text-xs font-normal">{tripPlan?.hotels?.length || 0} options</Badge>
-                            </div>
-                            
-                            {/* Local Hotel Date Controls */}
-                            <div className="flex items-center gap-2 text-xs">
-                                <div className="flex flex-col gap-0.5">
-                                    <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Check-In</label>
-                                    <input 
-                                        type="date" 
-                                        className="bg-muted border border-border rounded px-2 py-1 h-7 w-32"
-                                        value={localCheckIn}
-                                        onChange={(e) => setLocalCheckIn(e.target.value)}
-                                        min={new Date().toISOString().split('T')[0]}
-                                    />
+                   <div className="flex gap-4 items-start">
+                        {/* Hotel Filters Sidebar (mirrors FlightFilters layout) */}
+                        <div className="hidden md:block border-r border-border pr-4 sticky top-0 max-h-[calc(100vh-160px)] overflow-y-auto w-[240px] shrink-0">
+                            <div className="space-y-6">
+                                {/* Check-in / Check-out Dates — at top for quick access */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-sm text-slate-900">Travel Dates</h3>
+                                    <div className="space-y-2">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Check-In</label>
+                                            <input 
+                                                type="date" 
+                                                className="w-full bg-muted border border-border rounded px-2 py-1.5 text-sm"
+                                                value={localCheckIn}
+                                                onChange={(e) => setLocalCheckIn(e.target.value)}
+                                                min={new Date().toISOString().split('T')[0]}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Check-Out</label>
+                                            <input 
+                                                type="date" 
+                                                className="w-full bg-muted border border-border rounded px-2 py-1.5 text-sm"
+                                                value={localCheckOut}
+                                                onChange={(e) => setLocalCheckOut(e.target.value)}
+                                                min={localCheckIn || new Date().toISOString().split('T')[0]}
+                                            />
+                                        </div>
+                                        <Button 
+                                            size="sm" 
+                                            variant="secondary"
+                                            className="w-full h-8 mt-1"
+                                            onClick={handleHotelSearchUpdate}
+                                            disabled={isUpdatingHotels || !localCheckIn || !localCheckOut}
+                                        >
+                                            {isUpdatingHotels ? <><Loader2 className="w-3 h-3 animate-spin mr-1" /> Updating...</> : "Update Dates"}
+                                        </Button>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Check-Out</label>
-                                    <input 
-                                        type="date" 
-                                        className="bg-muted border border-border rounded px-2 py-1 h-7 w-32"
-                                        value={localCheckOut}
-                                        onChange={(e) => setLocalCheckOut(e.target.value)}
-                                        min={localCheckIn || new Date().toISOString().split('T')[0]}
-                                    />
+
+                                {/* Sort By Price */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-sm text-slate-900">Sort By</h3>
+                                    <div className="space-y-2">
+                                        {([
+                                            { label: "Price: Low to High", val: "price-asc" as const },
+                                            { label: "Price: High to Low", val: "price-desc" as const },
+                                            { label: "Top Rated First", val: "rating-desc" as const },
+                                        ] as const).map((opt) => (
+                                            <div 
+                                                key={opt.val} 
+                                                className="flex items-center gap-2 group cursor-pointer" 
+                                                onClick={() => setHotelSort(hotelSort === opt.val ? "default" : opt.val)}
+                                            >
+                                                <Checkbox 
+                                                    checked={hotelSort === opt.val}
+                                                    className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 pointer-events-none"
+                                                />
+                                                <Label className="text-sm font-normal text-slate-700 cursor-pointer pointer-events-none">{opt.label}</Label>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <Button 
-                                    size="sm" 
-                                    variant="secondary"
-                                    className="h-7 mt-4"
-                                    onClick={handleHotelSearchUpdate}
-                                    disabled={isUpdatingHotels || !localCheckIn || !localCheckOut}
-                                >
-                                    {isUpdatingHotels ? <Loader2 className="w-3 h-3 animate-spin" /> : "Update"}
-                                </Button>
+
+                                {/* Price Range Quick Picks */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-sm text-slate-900">Price Range</h3>
+                                    <div className="space-y-2">
+                                        {([
+                                            { label: "Under ₹3,000", min: 0, max: 3000 },
+                                            { label: "₹3,000 – ₹8,000", min: 3000, max: 8000 },
+                                            { label: "₹8,000 – ₹15,000", min: 8000, max: 15000 },
+                                            { label: "₹15,000+", min: 15000, max: Infinity },
+                                        ]).map((range) => {
+                                            const count = (tripPlan?.hotels || []).filter(h => h.price_per_night >= range.min && h.price_per_night < range.max).length;
+                                            const isActive = hotelPriceRange?.min === range.min && hotelPriceRange?.max === range.max;
+                                            return (
+                                                <div 
+                                                    key={range.label} 
+                                                    className="flex items-center justify-between group cursor-pointer" 
+                                                    onClick={() => setHotelPriceRange(isActive ? null : { min: range.min, max: range.max })}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <Checkbox 
+                                                            checked={isActive}
+                                                            className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 pointer-events-none"
+                                                        />
+                                                        <Label className="text-sm font-normal text-slate-700 cursor-pointer pointer-events-none">{range.label}</Label>
+                                                    </div>
+                                                    <span className="text-xs text-slate-500 font-medium">{count}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
 
-                        {isUpdatingHotels ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground animate-pulse">
-                                <Hotel className="w-8 h-8 mb-2 opacity-50" />
-                                <p>Checking availability for new dates...</p>
+                        {/* Hotel Cards (right side) */}
+                        <div className="flex-1 w-full min-w-0">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold flex items-center gap-2"><Hotel className="w-4 h-4 text-emerald-500" /> Hotels</h3>
+                                <Badge variant="secondary" className="text-xs font-normal">{sortedHotels.length}{sortedHotels.length !== totalHotels ? `/${totalHotels}` : ''} options</Badge>
                             </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {tripPlan?.hotels?.length ? (
-                                    tripPlan?.hotels?.map((hotel, idx) => (
-                                        <HotelCard key={idx} hotel={hotel} />
-                                    ))
-                                ) : (
-                                    <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
-                                        <p>No hotels found for these dates.</p>
-                                        <p className="text-xs mt-1 opacity-70">Try changing check-in/out dates above.</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+
+                            {isUpdatingHotels ? (
+                                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground animate-pulse">
+                                    <Hotel className="w-8 h-8 mb-2 opacity-50" />
+                                    <p>Checking availability for new dates...</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {sortedHotels.length > 0 ? (
+                                        sortedHotels.map((hotel, idx) => (
+                                            <HotelCard key={hotel.id || idx} hotel={hotel} index={idx} />
+                                        ))
+                                    ) : totalHotels > 0 ? (
+                                        <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
+                                            <p>No hotels match your filters.</p>
+                                            <p className="text-xs mt-1 opacity-70">Try adjusting price filters.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
+                                            <p>No hotels found for these dates.</p>
+                                            <p className="text-xs mt-1 opacity-70">Try changing dates in the sidebar.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                    </div>
                 )}
 

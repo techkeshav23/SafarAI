@@ -21,7 +21,8 @@ BEHAVIOR RULES:
 8. Keep responses concise (3-5 sentences). Use markdown formatting (**bold** for names/prices).
 9. If the destination is ambiguous, make a reasonable assumption and proceed.
 10. IMPORTANT: Always call at least one search tool before giving your final answer. Do NOT fabricate hotel/flight data.
-11. When multiple tool calls are needed, call them all at once for efficiency.`;
+11. When multiple tool calls are needed, call them all at once for efficiency.
+12. IMPORTANT: If the user searches for a REGION (like 'Kashmir', 'Goa', 'Kerala', 'Himachal'), you MUST convert it to the specific AIRPORT CITY (e.g. Kashmir -> Srinagar, Goa -> Dabolim/Mopa, Kerala -> Kochi, Himachal -> Shimla/Dharamshala) in your tool calls. Do not pass the region name directly.`;
 
 export const functionDeclarations = [
   {
@@ -30,11 +31,13 @@ export const functionDeclarations = [
     parameters: {
       type: "OBJECT",
       properties: {
-        origin: { type: "STRING", description: "Departure city (e.g. Delhi)" },
-        destination: { type: "STRING", description: "Destination city (e.g. Bangalore)" },
+        origin: { type: "STRING", description: "Departure city (e.g. Delhi). If user provides a region, convert to main airport city." },
+        destination: { type: "STRING", description: "Destination city (e.g. Bangalore). If user provides a region like 'Kashmir', use 'Srinagar'." },
+        destination_iata: { type: "STRING", description: "3-letter IATA code for the destination airport (e.g. SXR for Srinagar, GOI for Goa). REQUIRED if known." },
         start_date: { type: "STRING", description: "Trip start date (YYYY-MM-DD)" },
         end_date: { type: "STRING", description: "Trip end date (YYYY-MM-DD)" },
         adults: { type: "INTEGER", description: "Number of travelers" },
+        total_budget: { type: "NUMBER", description: "Total budget for the trip in local currency" },
       },
       required: ["destination"]
     }
@@ -49,7 +52,7 @@ export const functionDeclarations = [
         destination: {
           type: "STRING",
           description:
-            "City or destination name, e.g. 'Paris', 'Bali', 'Dubai'",
+            "City or destination name. If user says 'Kashmir', use 'Srinagar'. If 'Goa', use 'Panjim' or 'North Goa'.",
         },
         check_in: {
           type: "STRING",
@@ -96,12 +99,13 @@ export const functionDeclarations = [
       properties: {
         origin: {
           type: "STRING",
-          description: "Departure city name, default 'Delhi'",
+          description: "Departure city name. Convert regions to airports (e.g. Kerala -> Kochi).",
         },
         destination: {
           type: "STRING",
-          description: "Arrival city name",
+          description: "Arrival city name. Convert regions to airports (e.g. Kashmir -> Srinagar).",
         },
+        destination_iata: { type: "STRING", description: "3-letter IATA code (e.g. SXR). REQUIRED if known." },
         departure_date: {
           type: "STRING",
           description: "Departure date YYYY-MM-DD",
@@ -113,6 +117,10 @@ export const functionDeclarations = [
         adults: {
           type: "INTEGER",
           description: "Number of passengers, default 1",
+        },
+        total_budget: {
+           type: "NUMBER",
+           description: "Max budget filter",
         },
       },
       required: ["destination"],

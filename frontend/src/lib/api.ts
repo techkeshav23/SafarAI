@@ -31,6 +31,20 @@ export async function searchHotels(params: {
   return res.json();
 }
 
+/**
+ * Perform a standalone flight search using the parameters returned by the agent.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function searchFlights(params: any) {
+  const res = await fetch(`${API_BASE}/api/search/flights`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Flight search failed");
+  return res.json();
+}
+
 /* ── Booking Flow ── */
 
 export async function preBookHotel(bookingCode: string) {

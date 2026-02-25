@@ -9,7 +9,7 @@ import {
   getBookingDetail,
   cancelBooking,
   generateVoucher,
-  getHotelDetails,
+  findCachedHotelDetails,
   getBookingsByDate,
 } from "../services/tboApi.js";
 
@@ -117,18 +117,35 @@ router.post("/voucher", async (req, res) => {
   }
 });
 
-/**
- * POST /api/booking/hotel-details
- * Get detailed hotel info by hotel code.
- */
-router.post("/hotel-details", async (req, res) => {
+// ──────────────────────────────────────────
+// POST /api/booking/hotel-details
+// Get detailed hotel info by hotel code.
+// ──────────────────────────────────────────
+router.post("/hotel-details", (req, res) => {
   try {
     const { hotelCode } = req.body;
     if (!hotelCode) {
       return res.status(400).json({ error: "hotelCode is required" });
     }
-    const result = await getHotelDetails(hotelCode);
-    res.json(result);
+
+    // Try finding in cache first (since TBO HotelDetails API is broken on staging)
+    // This requires the user to have searched for the hotel previously in this session
+    const hotel = findCachedHotelDetails(hotelCode);
+    
+    if (hotel) {
+       // Return in TBO-like structure for compatibility
+       return res.json({ 
+           Status: { Code: 200, Description: "Success" },
+           HotelDetails: [hotel] 
+       });
+    }
+
+    // If not in cache, returning empty/error is safer than calling broken endpoint
+    return res.status(404).json({ 
+        Status: { Code: 404, Description: "Hotel details not found in cache" },
+        HotelDetails: [] 
+    });
+
   } catch (err) {
     console.error("HotelDetails error:", err);
     res.status(500).json({ error: "Failed to get hotel details" });

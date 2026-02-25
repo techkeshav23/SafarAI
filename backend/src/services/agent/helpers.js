@@ -1,7 +1,7 @@
 // ─── Helpers ────────────────────────────────────────────────────
 // Extracted from agentService.js to maintain modularity
 
-import { getHotelDetails as tboGetHotelDetails } from "../tboApi.js";
+import { getCachedHotelDetailsMap } from "../tboApi.js";
 
 // Date Helpers
 export function getDefaultCheckIn() {
@@ -18,6 +18,29 @@ export function getDefaultCheckOut(checkIn) {
 }
 
 // TBO Transform Helper
+
+/** Ensure image URLs use HTTPS and trim whitespace */
+function normalizeImageUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  url = url.trim();
+  if (url.startsWith('http://')) url = url.replace('http://', 'https://');
+  return url;
+}
+
+/** Strip HTML tags and decode common entities */
+function stripHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/<[^>]*>/g, ' ')           // remove tags
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')               // collapse whitespace
+    .trim();
+}
+
 export function transformTboHotel(searchResult, detailsMap = {}, destCity = "") {
   const code = String(searchResult.HotelCode);
   // Ensure strict string matching for details lookup
@@ -46,18 +69,20 @@ export function transformTboHotel(searchResult, detailsMap = {}, destCity = "") 
   return {
     id: code,
     name: details.HotelName || `Hotel in ${destCity || "this area"}`,
-    city: details.Address || details.CityName || destCity || "Unknown City",
+    city: details.CityName || destCity || details.Address || "Unknown City",
+    address: details.Address || "",
     country: details.CountryName || "",
-    description: details.Description || details.HotelName || "",
+    description: stripHtml(details.Description) || details.HotelName || "",
     price_per_night: inrPrice,
     total_fare: inrTotal,
     currency: "INR",
     tax: inrTax,
-    rating: details.HotelRating ? parseFloat(details.HotelRating) : 0,
+    rating: typeof details.HotelRating === 'number' ? details.HotelRating : (parseFloat(details.HotelRating) || 0),
     star_rating: details.StarRating || 0,
     amenities: (details.HotelFacilities || []).slice(0, 8),
     image_url:
-      details.Images?.[0] ||
+      normalizeImageUrl(details.Images && details.Images[0]) ||
+      normalizeImageUrl(details.ImageUrls && details.ImageUrls[0]?.ImageUrl) ||
       "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
     latitude: details.Latitude || 0,
     longitude: details.Longitude || 0,
@@ -82,32 +107,31 @@ export function transformTboHotel(searchResult, detailsMap = {}, destCity = "") 
   };
 }
 
-export async function fetchHotelDetailsMap(hotelCodes) {
+export async function fetchHotelDetailsMap(hotelCodes, cityCode = null) {
   if (!hotelCodes || hotelCodes.length === 0) return {};
   const map = {};
 
-  // Batch in chunks of 5 to avoid TBO 500 errors on large requests
-  const CHUNK_SIZE = 5;
-  for (let i = 0; i < hotelCodes.length; i += CHUNK_SIZE) {
-    const chunk = hotelCodes.slice(i, i + CHUNK_SIZE);
-    try {
-      const codes = chunk.join(",");
-      console.log(`[HotelDetails] Fetching details for chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${codes}`);
-      const data = await tboGetHotelDetails(codes);
-      const results = data.HotelDetails || [];
-      if (Array.isArray(results)) {
-        for (const d of results) {
-          if (d.HotelCode) map[String(d.HotelCode)] = d;
+  // FIRST: Try cached details from TBOHotelCodeList (always available, includes names/images/etc.)
+  if (cityCode) {
+    const cached = getCachedHotelDetailsMap(cityCode);
+    if (cached && Object.keys(cached).length > 0) {
+      for (const code of hotelCodes) {
+        const key = String(code);
+        if (cached[key]) {
+          map[key] = cached[key];
         }
       }
-      // If this chunk returned a 500 / error, just skip it
-      if (data.Status && data.Status.Code === 500) {
-        console.warn(`[HotelDetails] Chunk ${Math.floor(i / CHUNK_SIZE) + 1} returned 500, skipping`);
+      console.log(`[HotelDetails] Found ${Object.keys(map).length}/${hotelCodes.length} from TBOHotelCodeList cache`);
+      if (Object.keys(map).length === hotelCodes.length) {
+        return map; // All resolved from cache — skip broken API entirely
       }
-    } catch (err) {
-      console.error(`[HotelDetails] Chunk error: ${err.message}`);
-      // Continue with remaining chunks
     }
+  }
+
+  // FALLBACK: Try the Hoteldetails API for any missing codes (usually returns 500 on staging)
+  const missingCodes = hotelCodes.filter(c => !map[String(c)]);
+  if (missingCodes.length > 0) {
+    console.log(`[HotelDetails] Skipping broken Hoteldetails API for ${missingCodes.length} missing codes to save time.`);
   }
 
   console.log(`[HotelDetails] Resolved ${Object.keys(map).length}/${hotelCodes.length} hotel details`);

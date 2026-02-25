@@ -7,21 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, MapPin, BedDouble, UtensilsCrossed, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
-import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 
-export function HotelCard({ hotel }: { hotel: Hotel }) {
+export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number }) {
   const [showRooms, setShowRooms] = useState(false);
   const [booking, setBooking] = useState(false);
   const [bookingResult, setBookingResult] = useState<string | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const isTbo = hotel.source === "tbo";
   const isMock = hotel.source === "mock";
-  const displayPrice = isTbo && hotel.total_fare
-    ? hotel.total_fare
-    : hotel.price_per_night;
-  const priceLabel = isTbo && hotel.total_fare ? "total" : "/night";
+  const numNights = hotel.check_out && hotel.check_in 
+    ? Math.max(1, Math.round((new Date(hotel.check_out).getTime() - new Date(hotel.check_in).getTime()) / (1000 * 3600 * 24)))
+    : 1;
+
+  // Use price_per_night if available, else derive from total_fare
+  const displayPrice = hotel.price_per_night || ((hotel.total_fare || 0) / numNights);
+  
+  const priceLabel = "/night";
+  const totalPrice = hotel.total_fare;
 
   const handlePreBook = async (bookingCode: string) => {
     setBooking(true);
@@ -42,18 +47,37 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
 
   return (
     <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-none ring-1 ring-slate-200/60 bg-white h-full flex flex-col">
-      <div className="relative h-48 overflow-hidden shrink-0">
-        <Image
-          src={hotel.image_url || "/placeholder-hotel.jpg"}
+      <div className="relative h-48 overflow-hidden shrink-0 bg-slate-200">
+        
+        {/* Shimmer Placeholder (shows while loading) */}
+        {!imgLoaded && (
+          <div className="absolute inset-0 z-10 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse" />
+        )}
+
+        {/* Direct img with loading state */}
+        <img
+          src={hotel.image_url || "/placeholder-hotel.svg"}
           alt={hotel.name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
-          unoptimized
+          className={cn(
+            "absolute inset-0 w-full h-full object-cover transition-opacity duration-500",
+            "group-hover:scale-105", 
+            imgLoaded ? "opacity-100" : "opacity-0"
+          )}
+          loading={index < 3 ? "eager" : "lazy"}
+          referrerPolicy="no-referrer"
+          onLoad={(e) => setImgLoaded(true)}
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            img.onerror = null; // Prevent infinite loop
+            img.src = "/placeholder-hotel.svg";
+            setImgLoaded(true); // Show placeholder
+          }} 
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 z-20 pointer-events-none" />
         
         {isTbo && (
-          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-blue-600 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 uppercase tracking-wider">
+          <div className="absolute top-3 left-3 z-30 bg-white/90 backdrop-blur-md text-blue-600 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
             Live Deal
           </div>
@@ -75,7 +99,7 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
         <div className="absolute bottom-3 left-3 right-3 text-white">
             <p className="text-sm font-medium flex items-center gap-1 opacity-95 truncate">
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
-                {hotel.city}
+                {hotel.city}{hotel.country ? `, ${hotel.country}` : ""}
             </p>
         </div>
       </div>
@@ -103,9 +127,16 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
                     <span className="text-sm font-normal text-slate-400 mr-0.5">₹</span>
                     {Math.round(displayPrice).toLocaleString('en-IN')}
                 </div>
-                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
-                  {priceLabel}
-                </span>
+                <div className="flex flex-col items-end">
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                        {priceLabel}
+                    </span>
+                    {totalPrice && totalPrice !== displayPrice && (
+                        <span className="text-[10px] text-slate-500">
+                            Total: ₹{Math.round(totalPrice).toLocaleString('en-IN')}
+                        </span>
+                    )}
+                </div>
             </div>
         </div>
       </CardHeader>
@@ -118,8 +149,8 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
         {/* Amenities / Facilities */}
         {hotel.amenities && hotel.amenities.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {hotel.amenities.slice(0, 3).map((a) => (
-              <span key={a} className="inline-flex items-center px-2 py-1 rounded-md bg-slate-50 text-[10px] font-medium text-slate-600 border border-slate-100">
+            {hotel.amenities.slice(0, 3).map((a, i) => (
+              <span key={`${a}-${i}`} className="inline-flex items-center px-2 py-1 rounded-md bg-slate-50 text-[10px] font-medium text-slate-600 border border-slate-100">
                 {a}
               </span>
             ))}
@@ -145,7 +176,7 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
                     onClick={() => setShowRooms(!showRooms)}
                     className="w-full px-3 py-2 text-xs flex items-center justify-between text-slate-600 hover:bg-slate-100 transition-colors"
                   >
-                    <span className="font-medium flex items-center gap-1.5">
+                    <span className="font-medium flex items-center gap-1.5 ">
                         <BedDouble className="w-3.5 h-3.5" />
                         {hotel.rooms.length} Room Options
                     </span>
@@ -154,17 +185,25 @@ export function HotelCard({ hotel }: { hotel: Hotel }) {
                   
                   {showRooms && (
                     <div className="px-3 pb-3 space-y-2 border-t border-slate-100 bg-white">
-                        {hotel.rooms.slice(0, 2).map((room, idx) => (
+                        {hotel.rooms.slice(0, 2).map((room, idx) => {
+                             // Estimate per night for room
+                             const roomNights = hotel.check_out && hotel.check_in ? Math.max(1, (new Date(hotel.check_out).getTime() - new Date(hotel.check_in).getTime()) / (1000 * 3600 * 24)) : 1;
+                             const roomPerNight = room.total_fare / roomNights;
+                             
+                             return (
                              <div key={idx} className="pt-2">
                                 <div className="flex justify-between items-center mb-1">
                                     <span className="text-[10px] font-medium text-slate-700 line-clamp-1">{room.room_name || room.room_type}</span>
-                                    <span className="text-[10px] font-bold text-blue-600">₹{Math.round(room.total_fare).toLocaleString('en-IN')}</span>
+                                    <div className="text-right">
+                                        <div className="text-[10px] font-bold text-blue-600">₹{Math.round(roomPerNight).toLocaleString('en-IN')}<span className="font-normal text-slate-400">/n</span></div>
+                                    </div>
                                 </div>
                                 <div className="flex gap-2 text-[10px] text-slate-400">
                                     <span className="flex items-center gap-0.5"><UtensilsCrossed className="w-2.5 h-2.5"/> {room.meal_type}</span>
                                 </div>
                              </div>
-                        ))}
+                             );
+                        })}
                     </div>
                   )}
                </div>

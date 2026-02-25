@@ -4,14 +4,22 @@
  */
 import { Router } from "express";
 import { runAgent } from "../services/agentService.js";
-import { searchAmadeusFlights } from "../services/amadeusApi.js";
+import { searchTboFlights } from "../services/tboAirApi.js"; // Switched from Amadeus to TBO Air
 
-import { searchHotels as tboSearchHotels, getHotelDetails, getHotelCodeBatch } from "../services/tboApi.js";
+import { searchHotels as tboSearchHotels, getHotelCodeBatch, getCachedHotelDetailsMap } from "../services/tboApi.js";
 import { generateMockHotels } from "../services/mockHotels.js";
 import { getCityCode } from "../services/cityResolver.js";
 import { parseIntent } from "../services/intentParser.js";
 
 const router = Router();
+
+/**
+ * Strip HTML tags from TBO descriptions.
+ */
+function stripHtml(str) {
+  if (!str) return '';
+  return str.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+}
 
 /**
  * Transform TBO search result + details into our unified Hotel format.
@@ -42,17 +50,21 @@ function transformTboHotel(searchResult, detailsMap = {}, destCity = "") {
   return {
     id: code,
     name: details.HotelName || `Hotel in ${destCity || "this area"}`,
-    city: details.Address || details.CityName || destCity || "",
+    city: details.CityName || destCity || details.Address || "",
+    address: details.Address || "",
     country: details.CountryName || "",
-    description: details.Description || details.HotelName || "",
+    description: stripHtml(details.Description) || details.HotelName || "",
     price_per_night: inrPrice,
     total_fare: inrTotal,
     currency: "INR",
     tax: inrTax,
-    rating: details.HotelRating ? parseFloat(details.HotelRating) : 0,
+    rating: typeof details.HotelRating === 'number' ? details.HotelRating : (parseFloat(details.HotelRating) || 0),
     star_rating: details.StarRating || 0,
     amenities: (details.HotelFacilities || []).slice(0, 8),
-    image_url: details.Images?.[0] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
+    image_url:
+      (details.Images && details.Images[0]) ||
+      (details.ImageUrls && details.ImageUrls[0]?.ImageUrl) ||
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
     latitude: details.Latitude || 0,
     longitude: details.Longitude || 0,
     style_tags: [],
@@ -79,34 +91,32 @@ function transformTboHotel(searchResult, detailsMap = {}, destCity = "") {
 
 /**
  * Fetch hotel details for a set of hotel codes.
- * Batches in chunks of 5 to avoid TBO 500 errors.
- * Returns a map of hotelCode → details.
+ * First checks the cached details from TBOHotelCodeList (always has full data).
+ * Falls back to the Hoteldetails API for missing codes (often broken on staging).
  */
-async function fetchHotelDetailsMap(hotelCodes) {
+async function fetchHotelDetailsMap(hotelCodes, cityCode = null) {
   if (!hotelCodes || hotelCodes.length === 0) return {};
   const map = {};
-  const CHUNK_SIZE = 5;
 
-  for (let i = 0; i < hotelCodes.length; i += CHUNK_SIZE) {
-    const chunk = hotelCodes.slice(i, i + CHUNK_SIZE);
-    try {
-      const codes = chunk.join(",");
-      console.log(`[HotelDetails] Route: fetching chunk ${Math.floor(i / CHUNK_SIZE) + 1}: ${codes}`);
-      const data = await getHotelDetails(codes);
-      const results = data.HotelDetails || [];
-      if (Array.isArray(results)) {
-        for (const d of results) {
-          if (d.HotelCode) map[String(d.HotelCode)] = d;
+  // FIRST: Try cached details from TBOHotelCodeList
+  if (cityCode) {
+    const cached = getCachedHotelDetailsMap(cityCode);
+    if (cached && Object.keys(cached).length > 0) {
+      for (const code of hotelCodes) {
+        const key = String(code);
+        if (cached[key]) {
+          map[key] = cached[key];
         }
       }
-      if (data.Status && data.Status.Code === 500) {
-        console.warn(`[HotelDetails] Route: chunk returned 500, skipping`);
+      console.log(`[HotelDetails] Route: found ${Object.keys(map).length}/${hotelCodes.length} from TBOHotelCodeList cache`);
+      if (Object.keys(map).length === hotelCodes.length) {
+        return map; // All resolved from cache
       }
-    } catch (err) {
-      console.error(`[HotelDetails] Route: chunk error: ${err.message}`);
     }
   }
 
+  // FALLBACK: Removed because getHotelDetails is broken on staging
+  
   console.log(`[HotelDetails] Route: resolved ${Object.keys(map).length}/${hotelCodes.length} hotel details`);
   return map;
 }
@@ -170,8 +180,8 @@ router.post("/hotels", async (req, res) => {
       const hotelResults = tboResult.HotelResult || [];
       if (hotelResults.length > 0) {
         const returnedCodes = hotelResults.map((h) => String(h.HotelCode));
-        const detailsMap = await fetchHotelDetailsMap(returnedCodes);
-        const hotels = hotelResults.map((h) => transformTboHotel(h, detailsMap, destName || query || "this city")).slice(0, 20);
+        const detailsMap = await fetchHotelDetailsMap(returnedCodes, cityCode);
+        const hotels = hotelResults.map((h) => transformTboHotel(h, detailsMap, destName || query || "this city"));
         return res.json({ hotels, source: "tbo_live" });
       }
 
@@ -205,8 +215,8 @@ router.post("/hotels", async (req, res) => {
       const hotelResults = tboResult.HotelResult || [];
       if (hotelResults.length > 0) {
         const returnedCodes = hotelResults.map((h) => String(h.HotelCode));
-        const detailsMap = await fetchHotelDetailsMap(returnedCodes);
-        const hotels = hotelResults.map((h) => transformTboHotel(h, detailsMap, intent.destination || destination)).slice(0, 20);
+        const detailsMap = await fetchHotelDetailsMap(returnedCodes, resolvedCode);
+        const hotels = hotelResults.map((h) => transformTboHotel(h, detailsMap, intent.destination || destination));
         return res.json({ hotels, intent, source: "tbo_live" });
       }
     }
@@ -227,49 +237,51 @@ router.post("/hotels", async (req, res) => {
   }
 });
 
-/**
- * POST /api/search/flights
- * Search for flights (Amadeus API, fallback to mock).
- */
+// POST /api/search/flights
+// Uses TBO Air API now instead of Amadeus
 router.post("/flights", async (req, res) => {
   try {
     const { query, origin, destination, departureDate, returnDate, adults } = req.body;
-
-    // If direct params provided, use them
+    let flights = [];
+    let source = "tbo_air";
+    
+    // Direct params (from flight search form)
     if (destination && departureDate) {
-      const flights = await searchAmadeusFlights({
-        origin: origin || process.env.DEFAULT_ORIGIN || "",
-        destination,
-        departureDate,
-        returnDate: returnDate || null,
-        adults: adults || 1,
-        maxResults: 250,
-      });
-      return res.json({ flights, source: flights.length > 0 ? "amadeus" : "none" });
+      try {
+        flights = await searchTboFlights({
+          origin: origin || process.env.DEFAULT_ORIGIN || "DEL",
+          destination,
+          departureDate,
+          returnDate: returnDate || null,
+          adults: adults || 1,
+        });
+      } catch (err) {
+        console.error("TBO Search Error (Direct):", err.message);
+      }
+      return res.json({ flights, source: flights.length > 0 ? "tbo_air" : "none" });
     }
 
-    // Otherwise parse intent from query
+    // Intent-based search (from chat or main search bar)
     const intent = await parseIntent(query || "flights");
-    let flights = [];
-    let source = "mock";
-
+    
     if (intent.destination) {
       try {
-        flights = await searchAmadeusFlights({
-          origin: intent.origin || process.env.DEFAULT_ORIGIN || "",
+        flights = await searchTboFlights({
+          origin: intent.origin || process.env.DEFAULT_ORIGIN || "DEL",
           destination: intent.destination,
           departureDate: intent.check_in || getDefaultCheckIn(),
           returnDate: intent.check_out || null,
           adults: intent.adults || 1,
-          maxResults: 250,
         });
-        if (flights.length > 0) source = "amadeus";
+        
+        if (flights.length === 0) source = "none";
       } catch (err) {
-        console.error("Amadeus error:", err.message);
+        console.error("TBO Search Error (Intent):", err.message);
+        source = "error";
       }
+    } else {
+        source = "none";
     }
-
-    // No mock fallback — return empty if Amadeus has no results
 
     res.json({ flights, intent, source });
   } catch (err) {

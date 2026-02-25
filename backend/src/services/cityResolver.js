@@ -56,7 +56,9 @@ const CITY_ALIASES = {
   "udaipur": "Udaipur, India",
   "manali": "Manali, India",
   "pune": "Pune, India",
-  "hyderabad": "Hyderabad, India"
+  "hyderabad": "Hyderabad, India",
+  "kashmir": "Srinagar,   Jammu and Kashmir", // Use exact string from data
+  "srinagar": "Srinagar,   Jammu and Kashmir"
 };
 
 /**

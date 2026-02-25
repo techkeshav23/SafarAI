@@ -174,3 +174,364 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* ═══════════════════════════════════════════════
+   MAP STYLES — Price bubbles, popups, clusters
+   ═══════════════════════════════════════════════ */
+
+/* Loading skeleton shimmer */
+.map-skeleton-shimmer {
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgba(59, 130, 246, 0.06) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 2s ease-in-out infinite;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Voyager Map overrides ── */
+.voyager-map {
+  background: #f0f4f8;
+}
+
+.voyager-map .leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.12) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.voyager-map .leaflet-control-zoom a {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 18px !important;
+  color: #374151 !important;
+  background: rgba(255,255,255,0.95) !important;
+  backdrop-filter: blur(8px);
+  border: none !important;
+  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+  transition: background 0.15s ease;
+}
+
+.voyager-map .leaflet-control-zoom a:hover {
+  background: rgba(255,255,255,1) !important;
+  color: #111827 !important;
+}
+
+.voyager-map .leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+
+/* Hide Leaflet attribution bar — too cluttered */
+.voyager-map .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(4px);
+  padding: 2px 6px !important;
+  border-radius: 4px 0 0 0;
+}
+
+/* ── Price Bubble Markers (Airbnb-style) ── */
+.price-marker-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.price-bubble-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.12));
+  cursor: pointer;
+  animation: markerBounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.price-bubble-wrapper:hover {
+  transform: scale(1.15) !important;
+  z-index: 9999 !important;
+}
+
+.price-bubble {
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.price-bubble span {
+  display: block;
+  text-align: center;
+}
+
+.price-bubble-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid #111827;
+  margin-top: -1px;
+  transition: border-top-color 0.2s ease;
+}
+
+@keyframes markerBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(20px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1) translateY(-3px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Destination Pin ── */
+.destination-pin-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.dest-pin-wrapper {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dest-pin-pulse {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.25);
+  animation: destPulse 2s ease-out infinite;
+}
+
+.dest-pin-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: 2.5px solid white;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.5);
+  z-index: 1;
+}
+
+@keyframes destPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* ── Rich Popup Cards ── */
+.rich-popup .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04) !important;
+  overflow: hidden;
+  border: none !important;
+}
+
+.rich-popup .leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+  width: 100% !important;
+}
+
+.rich-popup .leaflet-popup-tip {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+.popup-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.popup-card-image {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #e0e7ff, #dbeafe);
+}
+
+.popup-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.popup-card:hover .popup-card-image img {
+  transform: scale(1.05);
+}
+
+.popup-source-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(8px);
+}
+
+.popup-source-badge.live {
+  background: rgba(16, 185, 129, 0.9);
+  color: white;
+}
+
+.popup-source-badge.sample {
+  background: rgba(245, 158, 11, 0.9);
+  color: white;
+}
+
+.popup-card-body {
+  padding: 12px 14px;
+}
+
+.popup-hotel-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 2px 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.popup-hotel-location {
+  font-size: 11.5px;
+  color: #6b7280;
+  margin: 0 0 8px 0;
+}
+
+.popup-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.popup-stars {
+  color: #f59e0b;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.popup-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: #059669;
+  white-space: nowrap;
+}
+
+.popup-price small {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-left: 1px;
+}
+
+/* ── Cluster Icons ── */
+.custom-cluster-icon {
+  background: transparent !important;
+}
+
+.cluster-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #111827, #1f2937);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25), 0 0 0 3px rgba(255,255,255,0.85);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.cluster-icon:hover {
+  transform: scale(1.12);
+}
+
+.cluster-icon span {
+  line-height: 1;
+}
+
+/* ── Map container subtle inner shadow ── */
+.map-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: inset 0 0 60px rgba(0,0,0,0.04);
+  border-radius: inherit;
+}
+
+/* ── Dark mode map overrides ── */
+.dark .voyager-map {
+  background: #1a1a2e;
+}
+
+.dark .voyager-map .leaflet-control-zoom a {
+  background: rgba(30, 30, 50, 0.95) !important;
+  color: #e5e7eb !important;
+  border-bottom-color: rgba(255,255,255,0.08) !important;
+}
+
+.dark .popup-card-body {
+  background: #1f2937;
+}
+
+.dark .popup-hotel-name {
+  color: #f3f4f6;
+}
+
+.dark .popup-hotel-location {
+  color: #9ca3af;
+}
+
+.dark .rich-popup .leaflet-popup-content-wrapper {
+  background: #1f2937 !important;
+}
+
+.dark .rich-popup .leaflet-popup-tip {
+  background: #1f2937 !important;
+}
+
+.dark .map-container::after {
+  box-shadow: inset 0 0 80px rgba(0,0,0,0.2);
+}
