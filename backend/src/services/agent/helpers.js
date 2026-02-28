@@ -1,141 +1,24 @@
-// ─── Helpers ────────────────────────────────────────────────────
-// Extracted from agentService.js to maintain modularity
+// ─── Agent Helpers ──────────────────────────────────────────────
+// Re-exports shared utils + agent-specific logic (map actions, cost estimation).
 
 import { getCachedHotelDetailsMap } from "../tboApi.js";
 
-// Date Helpers
-export function getDefaultCheckIn() {
-  const d = new Date();
-  d.setDate(d.getDate() + 1); // tomorrow
-  return d.toISOString().split("T")[0];
-}
+// Re-export shared utilities so tools.js imports stay unchanged
+export {
+  validateAndFixDate,
+  getDefaultCheckIn,
+  getDefaultCheckOut,
+  getDefaultFlightDate,
+  stripHtml,
+  normalizeImageUrl,
+  transformTboHotel,
+} from "../../utils/index.js";
 
-export function getDefaultCheckOut(checkIn) {
-  const d = checkIn ? new Date(checkIn) : new Date();
-  if (!checkIn) d.setDate(d.getDate() + 1);
-  d.setDate(d.getDate() + 2); // check-in + 2 days
-  return d.toISOString().split("T")[0];
-}
+import { fetchHotelDetailsMap as _fetchDetailsMap } from "../../utils/index.js";
 
-// TBO Transform Helper
-
-/** Ensure image URLs use HTTPS and trim whitespace */
-function normalizeImageUrl(url) {
-  if (!url || typeof url !== 'string') return '';
-  url = url.trim();
-  if (url.startsWith('http://')) url = url.replace('http://', 'https://');
-  return url;
-}
-
-/** Strip HTML tags and decode common entities */
-function stripHtml(str) {
-  if (!str) return '';
-  return str
-    .replace(/<[^>]*>/g, ' ')           // remove tags
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')               // collapse whitespace
-    .trim();
-}
-
-export function transformTboHotel(searchResult, detailsMap = {}, destCity = "") {
-  const code = String(searchResult.HotelCode);
-  // Ensure strict string matching for details lookup
-  const details =
-    detailsMap[code] ||
-    Object.values(detailsMap).find((d) => String(d.HotelCode) === code) ||
-    {};
-
-  const rooms = searchResult.Rooms || [];
-  const cheapestRoom = rooms.reduce(
-    (min, r) =>
-      (r.TotalFare || Infinity) < (min.TotalFare || Infinity) ? r : min,
-    rooms[0] || {}
-  );
-
-  // TBO staging returns USD — convert to INR for display
-  const USD_TO_INR = 84.5;
-  const rawPrice = cheapestRoom.DayRates?.[0]?.[0]?.BasePrice || cheapestRoom.TotalFare || 0;
-  const rawTotal = cheapestRoom.TotalFare || 0;
-  const rawTax = cheapestRoom.TotalTax || 0;
-  const isUsd = (searchResult.Currency || "USD") === "USD";
-  const inrPrice = isUsd ? Math.round(rawPrice * USD_TO_INR) : rawPrice;
-  const inrTotal = isUsd ? Math.round(rawTotal * USD_TO_INR) : rawTotal;
-  const inrTax = isUsd ? Math.round(rawTax * USD_TO_INR) : rawTax;
-
-  return {
-    id: code,
-    name: details.HotelName || `Hotel in ${destCity || "this area"}`,
-    city: details.CityName || destCity || details.Address || "Unknown City",
-    address: details.Address || "",
-    country: details.CountryName || "",
-    description: stripHtml(details.Description) || details.HotelName || "",
-    price_per_night: inrPrice,
-    total_fare: inrTotal,
-    currency: "INR",
-    tax: inrTax,
-    rating: typeof details.HotelRating === 'number' ? details.HotelRating : (parseFloat(details.HotelRating) || 0),
-    star_rating: details.StarRating || 0,
-    amenities: (details.HotelFacilities || []).slice(0, 8),
-    image_url:
-      normalizeImageUrl(details.Images && details.Images[0]) ||
-      normalizeImageUrl(details.ImageUrls && details.ImageUrls[0]?.ImageUrl) ||
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800",
-    latitude: details.Latitude || 0,
-    longitude: details.Longitude || 0,
-    style_tags: [],
-    match_score: null,
-    match_reason: null,
-    hotel_code: code,
-    booking_code: cheapestRoom.BookingCode || null,
-    rooms: rooms.map((r) => ({
-      room_name: (r.Name || []).join(", ") || "Standard Room",
-      booking_code: r.BookingCode || null,
-      inclusion: r.Inclusion || "",
-      meal_type: (r.MealType || "Room_Only").replace(/_/g, " "),
-      total_fare: isUsd ? Math.round((r.TotalFare || 0) * USD_TO_INR) : (r.TotalFare || 0),
-      total_tax: isUsd ? Math.round((r.TotalTax || 0) * USD_TO_INR) : (r.TotalTax || 0),
-      is_refundable: r.IsRefundable || false,
-      cancel_policies: r.CancelPolicies || [],
-      day_rates: r.DayRates || [],
-      promotions: r.RoomPromotion || [],
-    })),
-    source: "tbo",
-  };
-}
-
+/** Wrapper that injects the TBO cache getter */
 export async function fetchHotelDetailsMap(hotelCodes, cityCode = null) {
-  if (!hotelCodes || hotelCodes.length === 0) return {};
-  const map = {};
-
-  // FIRST: Try cached details from TBOHotelCodeList (always available, includes names/images/etc.)
-  if (cityCode) {
-    const cached = getCachedHotelDetailsMap(cityCode);
-    if (cached && Object.keys(cached).length > 0) {
-      for (const code of hotelCodes) {
-        const key = String(code);
-        if (cached[key]) {
-          map[key] = cached[key];
-        }
-      }
-      console.log(`[HotelDetails] Found ${Object.keys(map).length}/${hotelCodes.length} from TBOHotelCodeList cache`);
-      if (Object.keys(map).length === hotelCodes.length) {
-        return map; // All resolved from cache — skip broken API entirely
-      }
-    }
-  }
-
-  // FALLBACK: Try the Hoteldetails API for any missing codes (usually returns 500 on staging)
-  const missingCodes = hotelCodes.filter(c => !map[String(c)]);
-  if (missingCodes.length > 0) {
-    console.log(`[HotelDetails] Skipping broken Hoteldetails API for ${missingCodes.length} missing codes to save time.`);
-  }
-
-  console.log(`[HotelDetails] Resolved ${Object.keys(map).length}/${hotelCodes.length} hotel details`);
-  return map;
+  return _fetchDetailsMap(hotelCodes, cityCode, getCachedHotelDetailsMap);
 }
 
 // UI Action Builder

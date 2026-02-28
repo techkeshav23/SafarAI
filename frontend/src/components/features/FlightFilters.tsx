@@ -126,7 +126,7 @@ export function FlightFilters({ flights, onFilterChange }: FlightFiltersProps) {
                          <Checkbox 
                             id={`stop-${opt.val}`} 
                             checked={filters.stops.includes(opt.val)}
-                            className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 pointer-events-none"
+                            className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600 pointer-events-none"
                          />
                          <Label htmlFor={`stop-${opt.val}`} className="text-sm font-normal text-slate-700 cursor-pointer pointer-events-none">{opt.label}</Label>
                     </div>
@@ -150,7 +150,7 @@ export function FlightFilters({ flights, onFilterChange }: FlightFiltersProps) {
                      <Checkbox 
                         id={`time-${opt.val}`} 
                         checked={filters.departureTime.includes(opt.val)}
-                        className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 pointer-events-none"
+                        className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600 pointer-events-none"
                      />
                      <Label htmlFor={`time-${opt.val}`} className="text-sm font-normal text-slate-700 cursor-pointer pointer-events-none">{opt.label}</Label>
                 </div>
@@ -168,7 +168,7 @@ export function FlightFilters({ flights, onFilterChange }: FlightFiltersProps) {
                          <Checkbox 
                             id={`algo-${airline.name}`} 
                             checked={filters.airlines.includes(airline.name)}
-                            className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 pointer-events-none"
+                            className="w-4 h-4 rounded-[2px] border-slate-400 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600 pointer-events-none"
                          />
                          <div className="flex items-center gap-2 pointer-events-none">
                              {/* Small Logo */}

@@ -1,12 +1,12 @@
 "use client";
 
-import { Flight } from "@/lib/types";
+import { Flight, CartItem } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plane, ChevronDown } from "lucide-react";
+import { Plane, ChevronDown, ClipboardList, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function FlightCard({ flight, compact = false }: { flight: Flight; compact?: boolean }) {
+export function FlightCard({ flight, compact = false, isInCart = false, onAddToCart }: { flight: Flight; compact?: boolean; isInCart?: boolean; onAddToCart?: (item: CartItem) => void }) {
   // Parsing dates
   const dep = new Date(flight.departure_time);
   // Amadeus might not return arrival time in search results sometimes, so we estimate used duration
@@ -31,7 +31,7 @@ export function FlightCard({ flight, compact = false }: { flight: Flight; compac
   const logoUrl = `https://pics.avs.io/200/200/${airlineCode}.png`;
   
   return (
-    <Card className="group mb-3 relative bg-white hover:shadow-lg transition-all duration-300 border border-slate-200 rounded-xl overflow-hidden cursor-pointer hover:border-blue-400">
+    <Card className="group mb-3 relative bg-white hover:shadow-lg transition-all duration-300 border border-slate-200 rounded-xl overflow-hidden cursor-pointer hover:border-teal-400">
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row items-stretch md:items-center p-3 md:p-4 gap-3 md:gap-4">
             
@@ -95,8 +95,34 @@ export function FlightCard({ flight, compact = false }: { flight: Flight; compac
                      <p className="text-[10px] text-slate-400 font-medium">per traveler</p>
                  </div>
                  
-                 <Button className="h-8 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm transition-all active:scale-95 w-auto md:w-full max-w-[120px]">
-                    VIEW
+                 <Button 
+                    className={cn(
+                      "h-8 px-4 font-bold text-xs rounded-lg shadow-sm transition-all active:scale-95 w-auto md:w-full max-w-[120px] gap-1.5",
+                      isInCart
+                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200"
+                        : "bg-teal-600 hover:bg-teal-700 text-white"
+                    )}
+                    onClick={() => {
+                      if (!isInCart && onAddToCart) {
+                        onAddToCart({
+                          id: `flight-${flight.id}`,
+                          type: "flight",
+                          name: `${flight.airline} ${flight.carrier_code}-${flight.flight_number}`,
+                          price: flight.price,
+                          quantity: 1,
+                          image_url: `https://pics.avs.io/200/200/${airlineCode}.png`,
+                          details: `${flight.origin} \u2192 ${flight.destination} \u2022 ${flight.duration_hours}h \u2022 ${flight.stops === 0 ? 'Non-stop' : `${flight.stops} stop`}`,
+                          originalData: flight,
+                        });
+                      }
+                    }}
+                    disabled={isInCart}
+                 >
+                    {isInCart ? (
+                      <><Check className="w-3 h-3" /> Added</>
+                    ) : (
+                      <><ClipboardList className="w-3 h-3" /> Add</>
+                    )}
                  </Button>
             </div>
         </div>
@@ -104,7 +130,7 @@ export function FlightCard({ flight, compact = false }: { flight: Flight; compac
         {/* Footer Bar */}
         <div className="bg-slate-50 px-4 py-1.5 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">Partially Refundable</span>
-            <button className="flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
+            <button className="flex items-center gap-1 text-[10px] font-bold text-teal-600 hover:text-teal-800 transition-colors">
                 Flight Details <ChevronDown className="w-3 h-3" />
             </button>
         </div>

@@ -1,14 +1,14 @@
 /**
- * Agent Service - Agentic travel assistant with Gemini function calling.
+ * Agent Service — Agentic travel assistant with Gemini function calling.
  *
  * Architecture:
  *   User Query + History → Gemini (with tool definitions)
- *     → Tool Calls → Execute → Results → Gemini → Final Response
+ *     → Tool Calls → Execute → Results → Final Response
  *
  * Refactored to use modular components in ./agent/
  */
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import dotenv from "dotenv";
+import config from "../config/index.js";
 import { parseIntent } from "./intentParser.js";
 import {
   SYSTEM_INSTRUCTION,
@@ -26,10 +26,8 @@ import {
   getStepText,
 } from "./agent/helpers.js";
 
-dotenv.config();
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const AGENT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
+const AGENT_MODEL = config.gemini.model;
 
 // ─── Main Agent Loop ────────────────────────────────────────────
 
@@ -53,7 +51,7 @@ export async function runAgent(query, history = []) {
     dataSource: "mock",
   };
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = config.gemini.apiKey;
   if (!apiKey || apiKey === "your_gemini_api_key_here") {
     console.warn("[Agent] No Gemini API key — using fallback.");
     return await runFallback(query, steps, collected);

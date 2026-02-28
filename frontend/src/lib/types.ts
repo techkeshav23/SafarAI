@@ -118,3 +118,15 @@ export interface ChatMessage {
   };
   timestamp: Date;
 }
+
+// ── Cart Types ──
+export interface CartItem {
+  id: string;
+  type: "hotel" | "flight" | "activity";
+  name: string;
+  price: number;
+  quantity: number;
+  image_url?: string;
+  details: string; // e.g. "Mumbai, 3-star" or "DEL → BOM, 2h 30m"
+  originalData: Hotel | Flight | Activity;
+}

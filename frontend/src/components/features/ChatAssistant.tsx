@@ -182,7 +182,7 @@ export function ChatAssistant({ onSearchResults, onLoadingChange, isLoading, onS
                                 <Sparkles className="w-4 h-4 text-primary" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-sm">Voyage Assistant</h3>
+                                <h3 className="font-semibold text-sm">SafarAI Assistant</h3>
                                 <div className="flex items-center gap-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                                     <span className="text-xs text-muted-foreground">Online</span>

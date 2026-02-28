@@ -1,19 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Hotel } from "@/lib/types";
-import { preBookHotel } from "@/lib/api";
+import { Hotel, CartItem } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, BedDouble, UtensilsCrossed, ShieldCheck, Loader2, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { Star, MapPin, BedDouble, UtensilsCrossed, Sparkles, ClipboardList, Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number }) {
+export function HotelCard({ hotel, index = 99, isInCart = false, onAddToCart }: { hotel: Hotel; index?: number; isInCart?: boolean; onAddToCart?: (item: CartItem) => void }) {
   const [showRooms, setShowRooms] = useState(false);
-  const [booking, setBooking] = useState(false);
-  const [bookingResult, setBookingResult] = useState<string | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const isTbo = hotel.source === "tbo";
@@ -27,23 +24,6 @@ export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number 
   
   const priceLabel = "/night";
   const totalPrice = hotel.total_fare;
-
-  const handlePreBook = async (bookingCode: string) => {
-    setBooking(true);
-    setBookingResult(null);
-    try {
-      const result = await preBookHotel(bookingCode);
-      if (result && (result.Status?.Code === 200 || result.PreBookResult?.Status === "Success" || result.item_id)) {
-        setBookingResult("✅ Room blocked! Proceeding...");
-      } else {
-        setBookingResult(`⚠️ ${result.Status?.Description || "Not available"}`);
-      }
-    } catch {
-      setBookingResult("❌ Error. Try again.");
-    } finally {
-      setBooking(false);
-    }
-  };
 
   return (
     <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-none ring-1 ring-slate-200/60 bg-white h-full flex flex-col">
@@ -77,8 +57,8 @@ export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 z-20 pointer-events-none" />
         
         {isTbo && (
-          <div className="absolute top-3 left-3 z-30 bg-white/90 backdrop-blur-md text-blue-600 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 uppercase tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          <div className="absolute top-3 left-3 z-30 bg-white/90 backdrop-blur-md text-teal-600 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm flex items-center gap-1 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
             Live Deal
           </div>
         )}
@@ -123,7 +103,7 @@ export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number 
                 </div>
             </div>
             <div className="text-right shrink-0">
-                <div className="text-xl font-bold text-blue-600 flex items-center justify-end leading-none">
+                <div className="text-xl font-bold text-teal-600 flex items-center justify-end leading-none">
                     <span className="text-sm font-normal text-slate-400 mr-0.5">₹</span>
                     {Math.round(displayPrice).toLocaleString('en-IN')}
                 </div>
@@ -180,7 +160,7 @@ export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number 
                         <BedDouble className="w-3.5 h-3.5" />
                         {hotel.rooms.length} Room Options
                     </span>
-                    <span className="text-blue-600 font-semibold">{showRooms ? "Hide" : "View"}</span>
+                    <span className="text-teal-600 font-semibold">{showRooms ? "Hide" : "View"}</span>
                   </button>
                   
                   {showRooms && (
@@ -195,7 +175,7 @@ export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number 
                                 <div className="flex justify-between items-center mb-1">
                                     <span className="text-[10px] font-medium text-slate-700 line-clamp-1">{room.room_name || room.room_type}</span>
                                     <div className="text-right">
-                                        <div className="text-[10px] font-bold text-blue-600">₹{Math.round(roomPerNight).toLocaleString('en-IN')}<span className="font-normal text-slate-400">/n</span></div>
+                                        <div className="text-[10px] font-bold text-teal-600">₹{Math.round(roomPerNight).toLocaleString('en-IN')}<span className="font-normal text-slate-400">/n</span></div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2 text-[10px] text-slate-400">
@@ -209,42 +189,41 @@ export function HotelCard({ hotel, index = 99 }: { hotel: Hotel; index?: number 
                </div>
             )}
 
-            <div className="pt-1">
-                {isMock ? (
-                    <Button variant="outline" className="w-full text-sm font-medium border-amber-200 text-amber-700 hover:text-amber-800 hover:border-amber-300 hover:bg-amber-50 rounded-xl h-9">
-                        Sample Listing
-                    </Button>
-                ) : isTbo && hotel.rooms?.[0]?.booking_code ? (
-                    <Button 
-                        className={cn(
-                            "w-full text-sm font-semibold rounded-xl shadow-md h-9 transition-all",
-                            bookingResult?.includes("✅") 
-                                ? "bg-green-600 hover:bg-green-700 shadow-green-500/20" 
-                                : "bg-blue-600 hover:bg-blue-700 shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-[0.98]"
-                        )}
-                        onClick={() => hotel.rooms?.[0]?.booking_code && handlePreBook(hotel.rooms[0].booking_code)}
-                        disabled={booking || (!!bookingResult && bookingResult.includes("✅"))}
-                    >
-                        {booking ? (
-                            <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Checking...</>
-                        ) : bookingResult ? (
-                            <span className="flex items-center gap-1.5">
-                                {bookingResult.includes("✅") ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                                {bookingResult}
-                            </span>
-                        ) : (
-                            "Book Best Price"
-                        )}
-                    </Button>
-                ) : (
-                    <Button variant="outline" className="w-full text-sm font-medium border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl h-9">
-                        View Details
-                    </Button>
-                )}
+            <div className="pt-1 space-y-2">
+                {/* Add to Cart Button */}
+                <Button
+                  variant={isInCart ? "outline" : "default"}
+                  className={cn(
+                    "w-full text-sm font-semibold rounded-xl h-9 gap-2 transition-all",
+                    isInCart
+                      ? "border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                      : "bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-200"
+                  )}
+                  onClick={() => {
+                    if (!isInCart && onAddToCart) {
+                      onAddToCart({
+                        id: `hotel-${hotel.id}`,
+                        type: "hotel",
+                        name: hotel.name,
+                        price: Math.round(displayPrice),
+                        quantity: 1,
+                        image_url: hotel.image_url,
+                        details: `${hotel.city}${hotel.country ? `, ${hotel.country}` : ''} • ${hotel.star_rating || Math.round(hotel.rating)}★ • ₹${Math.round(displayPrice).toLocaleString('en-IN')}/night`,
+                        originalData: hotel,
+                      });
+                    }
+                  }}
+                  disabled={isInCart}
+                >
+                  {isInCart ? (
+                    <><Check className="w-4 h-4" /> Added to Itinerary</>
+                  ) : (
+                    <><ClipboardList className="w-4 h-4" /> Add to Itinerary</>
+                  )}
+                </Button>
             </div>
         </div>
       </CardContent>
     </Card>
   );
 }
-

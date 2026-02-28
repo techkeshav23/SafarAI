@@ -54,95 +54,104 @@
 :root {
   --radius: 0.75rem;
   
-  /* Modern Travel Palette - Light Mode */
-  /* Soft Off-White Background */
-  --background: oklch(0.985 0.01 200); 
-  /* Deep Blue-Grey Text */
-  --foreground: oklch(0.20 0.03 260); 
+  /* ══ Ocean Teal + Sunset Amber — Light Mode ══ */
 
-  /* Cards - Pure White with subtle tint */
+  /* Soft cool-white background */
+  --background: oklch(0.985 0.005 210);
+  /* Deep slate foreground */
+  --foreground: oklch(0.18 0.02 255);
+
+  /* Cards — pure white */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.03 260);
-  
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.03 260);
+  --card-foreground: oklch(0.18 0.02 255);
 
-  /* Primary - Vibrant "Voyager" Teal */
-  --primary: oklch(0.55 0.18 245);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 255);
+
+  /* Primary — Ocean Teal */
+  --primary: oklch(0.55 0.16 200);
   --primary-foreground: oklch(0.99 0 0);
 
-  /* Secondary - Soft Sand/Beige */
-  --secondary: oklch(0.96 0.03 90);
-  --secondary-foreground: oklch(0.35 0.04 260);
+  /* Secondary — Soft Sand */
+  --secondary: oklch(0.96 0.025 85);
+  --secondary-foreground: oklch(0.35 0.04 255);
 
-  --muted: oklch(0.96 0.02 260);
-  --muted-foreground: oklch(0.55 0.05 260);
+  --muted: oklch(0.96 0.01 220);
+  --muted-foreground: oklch(0.55 0.03 255);
 
-  /* Accent - Warm Sunset Orange for CTAs */
-  --accent: oklch(0.95 0.02 260);
-  --accent-foreground: oklch(0.25 0.02 260);
+  /* Accent — Sunset Amber for CTAs & highlights */
+  --accent: oklch(0.75 0.18 75);
+  --accent-foreground: oklch(0.20 0.04 60);
 
-  --destructive: oklch(0.6 0.18 25);
-  
-  --border: oklch(0.92 0.01 260);
-  --input: oklch(0.92 0.01 260);
-  --ring: oklch(0.55 0.18 245);
+  --destructive: oklch(0.58 0.2 25);
 
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --border: oklch(0.92 0.008 220);
+  --input: oklch(0.92 0.008 220);
+  --ring: oklch(0.55 0.16 200);
 
-  /* Sidebar variables */
+  /* Charts — teal, amber, coral, emerald, gold */
+  --chart-1: oklch(0.55 0.16 200);
+  --chart-2: oklch(0.75 0.18 75);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.60 0.15 160);
+  --chart-5: oklch(0.80 0.16 85);
+
+  /* Sidebar */
   --sidebar: oklch(0.99 0 0);
-  --sidebar-foreground: oklch(0.20 0.03 260);
-  --sidebar-primary: oklch(0.55 0.18 245);
+  --sidebar-foreground: oklch(0.18 0.02 255);
+  --sidebar-primary: oklch(0.55 0.16 200);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.96 0.03 90);
-  --sidebar-accent-foreground: oklch(0.20 0.03 260);
-  --sidebar-border: oklch(0.92 0.01 260);
-  --sidebar-ring: oklch(0.55 0.18 245);
+  --sidebar-accent: oklch(0.75 0.18 75);
+  --sidebar-accent-foreground: oklch(0.20 0.04 60);
+  --sidebar-border: oklch(0.92 0.008 220);
+  --sidebar-ring: oklch(0.55 0.16 200);
 }
 
 .dark {
-  /* Dark Mode - Deep Ocean/Night Sky */
-  --background: oklch(0.12 0.04 260);
-  --foreground: oklch(0.98 0.01 260);
+  /* ══ Ocean Teal + Sunset Amber — Dark Mode ══ */
+  --background: oklch(0.13 0.03 250);
+  --foreground: oklch(0.97 0.005 210);
 
-  --card: oklch(0.17 0.04 260);
-  --card-foreground: oklch(0.98 0.01 260);
+  --card: oklch(0.18 0.025 250);
+  --card-foreground: oklch(0.97 0.005 210);
 
-  --popover: oklch(0.17 0.04 260);
-  --popover-foreground: oklch(0.98 0.01 260);
+  --popover: oklch(0.18 0.025 250);
+  --popover-foreground: oklch(0.97 0.005 210);
 
-  /* Lighter teal/cyan for dark mode visibility */
-  --primary: oklch(0.65 0.15 240);
-  --primary-foreground: oklch(0.12 0.04 260);
+  /* Brighter teal for dark-mode readability */
+  --primary: oklch(0.72 0.14 195);
+  --primary-foreground: oklch(0.13 0.03 250);
 
-  --secondary: oklch(0.22 0.05 260);
-  --secondary-foreground: oklch(0.98 0.01 260);
+  --secondary: oklch(0.22 0.04 250);
+  --secondary-foreground: oklch(0.97 0.005 210);
 
-  --muted: oklch(0.22 0.05 260);
-  --muted-foreground: oklch(0.70 0.03 260);
+  --muted: oklch(0.22 0.04 250);
+  --muted-foreground: oklch(0.68 0.02 250);
 
-  --accent: oklch(0.22 0.05 260);
-  --accent-foreground: oklch(0.98 0.01 260);
+  /* Lighter amber accent for dark mode */
+  --accent: oklch(0.80 0.16 75);
+  --accent-foreground: oklch(0.15 0.03 60);
 
-  --destructive: oklch(0.6 0.18 25);
-  
-  --border: oklch(0.25 0.04 260);
-  --input: oklch(0.25 0.04 260);
-  --ring: oklch(0.65 0.15 240);
-  
-  --sidebar: oklch(0.14 0.04 260);
-  --sidebar-foreground: oklch(0.98 0.01 260);
-  --sidebar-primary: oklch(0.65 0.15 240);
-  --sidebar-primary-foreground: oklch(0.12 0.04 260);
-  --sidebar-accent: oklch(0.22 0.05 260);
-  --sidebar-accent-foreground: oklch(0.98 0.01 260);
-  --sidebar-border: oklch(0.25 0.04 260);
-  --sidebar-ring: oklch(0.65 0.15 240);
+  --destructive: oklch(0.65 0.2 25);
+
+  --border: oklch(0.26 0.03 250);
+  --input: oklch(0.26 0.03 250);
+  --ring: oklch(0.72 0.14 195);
+
+  --chart-1: oklch(0.72 0.14 195);
+  --chart-2: oklch(0.80 0.16 75);
+  --chart-3: oklch(0.70 0.20 30);
+  --chart-4: oklch(0.70 0.14 160);
+  --chart-5: oklch(0.85 0.14 85);
+
+  --sidebar: oklch(0.15 0.03 250);
+  --sidebar-foreground: oklch(0.97 0.005 210);
+  --sidebar-primary: oklch(0.72 0.14 195);
+  --sidebar-primary-foreground: oklch(0.13 0.03 250);
+  --sidebar-accent: oklch(0.80 0.16 75);
+  --sidebar-accent-foreground: oklch(0.15 0.03 60);
+  --sidebar-border: oklch(0.26 0.03 250);
+  --sidebar-ring: oklch(0.72 0.14 195);
 }
 
 @layer base {
@@ -176,138 +185,277 @@
 }
 
 /* ═══════════════════════════════════════════════
-   MAP STYLES — Price bubbles, popups, clusters
+   MAP STYLES — Google Maps–style UI
    ═══════════════════════════════════════════════ */
 
-/* Loading skeleton shimmer */
-.map-skeleton-shimmer {
-  background: linear-gradient(
-    110deg,
-    transparent 30%,
-    rgba(59, 130, 246, 0.06) 50%,
-    transparent 70%
-  );
+/* Loading skeleton */
+.gmap-skeleton-shimmer {
+  background: linear-gradient(110deg, transparent 30%, rgba(0,0,0,0.03) 50%, transparent 70%);
   background-size: 200% 100%;
-  animation: skeletonShimmer 2s ease-in-out infinite;
+  animation: gmapShimmer 2s ease-in-out infinite;
 }
-
-@keyframes skeletonShimmer {
+@keyframes gmapShimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 
-/* ── Voyager Map overrides ── */
-.voyager-map {
-  background: #f0f4f8;
+/* ── Base Leaflet overrides ── */
+.gmap-leaflet {
+  background: #e8e4df;
+  font-family: 'Google Sans', Roboto, Arial, sans-serif;
 }
 
-.voyager-map .leaflet-control-zoom {
+/* Zoom controls — Google Maps style */
+.gmap-leaflet .leaflet-control-zoom {
   border: none !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.12) !important;
-  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+  border-radius: 8px !important;
   overflow: hidden;
+  margin-bottom: 10px !important;
+  margin-right: 10px !important;
 }
 
-.voyager-map .leaflet-control-zoom a {
-  width: 36px !important;
-  height: 36px !important;
-  line-height: 36px !important;
+.gmap-leaflet .leaflet-control-zoom a {
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
   font-size: 18px !important;
-  color: #374151 !important;
-  background: rgba(255,255,255,0.95) !important;
-  backdrop-filter: blur(8px);
+  color: #666 !important;
+  background: #fff !important;
   border: none !important;
-  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
-  transition: background 0.15s ease;
+  border-bottom: 1px solid #e6e6e6 !important;
+  transition: color 0.15s ease;
+  font-weight: 400 !important;
 }
 
-.voyager-map .leaflet-control-zoom a:hover {
-  background: rgba(255,255,255,1) !important;
-  color: #111827 !important;
+.gmap-leaflet .leaflet-control-zoom a:hover {
+  background: #f5f5f5 !important;
+  color: #333 !important;
 }
 
-.voyager-map .leaflet-control-zoom a:last-child {
+.gmap-leaflet .leaflet-control-zoom a:active {
+  background: #e8e8e8 !important;
+}
+
+.gmap-leaflet .leaflet-control-zoom a:last-child {
   border-bottom: none !important;
 }
 
-/* Hide Leaflet attribution bar — too cluttered */
-.voyager-map .leaflet-control-attribution {
-  font-size: 9px;
-  background: rgba(255,255,255,0.7) !important;
-  backdrop-filter: blur(4px);
-  padding: 2px 6px !important;
-  border-radius: 4px 0 0 0;
+/* Attribution — Google Maps style */
+.gmap-leaflet .leaflet-control-attribution {
+  font-size: 10px;
+  background: rgba(255,255,255,0.8) !important;
+  padding: 2px 5px !important;
+  color: #666;
+  font-family: Roboto, Arial, sans-serif;
+}
+.gmap-leaflet .leaflet-control-attribution a {
+  color: #4285f4;
 }
 
-/* ── Price Bubble Markers (Airbnb-style) ── */
-.price-marker-icon {
+/* ── Control buttons (Fullscreen, etc.) ── */
+.gmap-ctrl-btn {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.15s, background 0.15s;
+}
+.gmap-ctrl-btn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+.gmap-ctrl-btn:active {
+  background: #e8e8e8;
+}
+
+/* ── My Location button ── */
+.gmap-my-location {
+  position: absolute;
+  bottom: 110px;
+  right: 10px;
+  z-index: 1000;
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.15s, background 0.15s;
+}
+.gmap-my-location:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+.gmap-my-location:active {
+  background: #e8e8e8;
+}
+
+/* ── Map layer thumbnail toggle (Google Maps style) ── */
+.gmap-layer-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+  position: relative;
+  border: 2px solid #fff;
+  transition: box-shadow 0.2s, transform 0.15s;
+  display: block;
+  padding: 0;
+  background: none;
+  flex-shrink: 0;
+}
+.gmap-layer-thumb:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transform: scale(1.05);
+}
+.gmap-layer-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gmap-layer-thumb-label {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: Roboto, Arial, sans-serif;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  line-height: 1;
+  padding: 2px;
+}
+
+/* ── Info chip ── */
+.gmap-info-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3c4043;
+  font-family: Roboto, Arial, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════
+   Google Maps–style Price Pill Markers
+   ═══════════════════════════════════════════════ */
+.gmap-marker-icon {
   background: transparent !important;
   border: none !important;
 }
 
-.price-bubble-wrapper {
+.gmap-price-pin {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.12));
   cursor: pointer;
-  animation: markerBounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+  animation: gmapPinDrop 0.2s ease-out forwards;
 }
 
-.price-bubble-wrapper:hover {
-  transform: scale(1.15) !important;
-  z-index: 9999 !important;
-}
-
-.price-bubble {
-  padding: 4px 10px;
-  border-radius: 20px;
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
+.gmap-price-pin span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  color: #202124;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: Roboto, Arial, sans-serif;
+  padding: 7px 12px;
+  border-radius: 24px;
   white-space: nowrap;
-  letter-spacing: 0.02em;
-  line-height: 1.4;
-  transition: all 0.2s ease;
+  border: none;
+  transition: all 0.12s ease;
+  line-height: 1;
+  letter-spacing: 0.1px;
 }
 
-.price-bubble span {
-  display: block;
-  text-align: center;
+.gmap-price-pin-icon {
+  flex-shrink: 0;
+  color: #e8453c;
+  transition: color 0.12s ease;
 }
 
-.price-bubble-arrow {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 7px solid #111827;
-  margin-top: -1px;
-  transition: border-top-color 0.2s ease;
+.gmap-price-pin:hover .gmap-price-pin-icon,
+.gmap-price-pin--active .gmap-price-pin-icon {
+  color: #fff;
 }
 
-@keyframes markerBounceIn {
+.gmap-price-pin::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  transform: rotate(45deg);
+  margin-top: -5px;
+  transition: background 0.12s ease;
+}
+
+.gmap-price-pin:hover span {
+  background: #202124;
+  color: #fff;
+}
+.gmap-price-pin:hover::after {
+  background: #202124;
+}
+
+.gmap-price-pin--active span {
+  background: #202124;
+  color: #fff;
+}
+.gmap-price-pin--active::after {
+  background: #202124;
+}
+
+.gmap-price-pin--active:hover span {
+  background: #3c4043;
+}
+.gmap-price-pin--active:hover::after {
+  background: #3c4043;
+}
+
+@keyframes gmapPinDrop {
   0% {
     opacity: 0;
-    transform: scale(0.3) translateY(20px);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.1) translateY(-3px);
+    transform: translateY(-6px) scale(0.92);
   }
   100% {
-    transform: scale(1) translateY(0);
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
-/* ── Destination Pin ── */
-.destination-pin-icon {
+/* ── Destination dot (Google Maps blue dot) ── */
+.gmap-dest-icon {
   background: transparent !important;
   border: none !important;
 }
 
-.dest-pin-wrapper {
+.gmap-dest-wrapper {
   position: relative;
   width: 24px;
   height: 24px;
@@ -316,112 +464,125 @@
   justify-content: center;
 }
 
-.dest-pin-pulse {
+.gmap-dest-pulse {
   position: absolute;
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: rgba(59, 130, 246, 0.25);
-  animation: destPulse 2s ease-out infinite;
+  background: rgba(66, 133, 244, 0.2);
+  animation: gmapPulse 2s ease-out infinite;
 }
 
-.dest-pin-dot {
-  width: 12px;
-  height: 12px;
+.gmap-dest-dot {
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border: 2.5px solid white;
-  box-shadow: 0 2px 8px rgba(59,130,246,0.5);
+  background: #4285f4;
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
   z-index: 1;
 }
 
-@keyframes destPulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  100% {
-    transform: scale(3);
-    opacity: 0;
-  }
+@keyframes gmapPulse {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(3); opacity: 0; }
 }
 
-/* ── Rich Popup Cards ── */
-.rich-popup .leaflet-popup-content-wrapper {
+/* ═══════════════════════════════════════════════
+   Google Maps–style Popup / Info Window
+   ═══════════════════════════════════════════════ */
+.gmap-popup .leaflet-popup-content-wrapper {
   padding: 0 !important;
-  border-radius: 14px !important;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04) !important;
   overflow: hidden;
   border: none !important;
+  background: #fff !important;
 }
 
-.rich-popup .leaflet-popup-content {
+.gmap-popup .leaflet-popup-content {
   margin: 0 !important;
   line-height: 1.4 !important;
   width: 100% !important;
+  font-family: Roboto, Arial, sans-serif;
 }
 
-.rich-popup .leaflet-popup-tip {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+.gmap-popup .leaflet-popup-tip-container {
+  margin-top: -1px;
+}
+.gmap-popup .leaflet-popup-tip {
+  background: #fff !important;
+  box-shadow: 0 2px 7px 1px rgba(0,0,0,0.15) !important;
 }
 
-.popup-card {
+.gmap-popup .leaflet-popup-close-button {
+  top: 6px !important;
+  right: 6px !important;
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 18px !important;
+  color: #70757a !important;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.gmap-popup .leaflet-popup-close-button:hover {
+  background: #f1f3f4;
+  color: #3c4043 !important;
+}
+
+.gmap-popup-card {
   display: flex;
   flex-direction: column;
   width: 100%;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: Roboto, Arial, sans-serif;
 }
 
-.popup-card-image {
+.gmap-popup-img {
   position: relative;
   width: 100%;
-  height: 120px;
+  height: 140px;
   overflow: hidden;
-  background: linear-gradient(135deg, #e0e7ff, #dbeafe);
+  background: #f1f3f4;
 }
 
-.popup-card-image img {
+.gmap-popup-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
 }
 
-.popup-card:hover .popup-card-image img {
-  transform: scale(1.05);
-}
-
-.popup-source-badge {
+.gmap-popup-badge {
   position: absolute;
   top: 8px;
   right: 8px;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  backdrop-filter: blur(8px);
+  letter-spacing: 0.04em;
+}
+.gmap-popup-badge.live {
+  background: rgba(52, 168, 83, 0.9);
+  color: #fff;
+}
+.gmap-popup-badge.sample {
+  background: rgba(251, 188, 4, 0.9);
+  color: #3c4043;
 }
 
-.popup-source-badge.live {
-  background: rgba(16, 185, 129, 0.9);
-  color: white;
-}
-
-.popup-source-badge.sample {
-  background: rgba(245, 158, 11, 0.9);
-  color: white;
-}
-
-.popup-card-body {
+.gmap-popup-body {
   padding: 12px 14px;
 }
 
-.popup-hotel-name {
+.gmap-popup-title {
   font-size: 14px;
-  font-weight: 700;
-  color: #111827;
+  font-weight: 500;
+  color: #202124;
   margin: 0 0 2px 0;
   line-height: 1.3;
   display: -webkit-box;
@@ -430,108 +591,376 @@
   overflow: hidden;
 }
 
-.popup-hotel-location {
-  font-size: 11.5px;
-  color: #6b7280;
+.gmap-popup-subtitle {
+  font-size: 12px;
+  color: #70757a;
   margin: 0 0 8px 0;
 }
 
-.popup-card-footer {
+.gmap-popup-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.popup-stars {
-  color: #f59e0b;
-  font-size: 13px;
-  letter-spacing: 1px;
+.gmap-popup-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.popup-price {
-  font-size: 15px;
-  font-weight: 800;
-  color: #059669;
+.gmap-popup-stars {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #137333;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.4;
+}
+
+.gmap-popup-stars-dots {
+  color: #fbbc04;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.gmap-popup-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
   white-space: nowrap;
 }
 
-.popup-price small {
-  font-size: 10.5px;
-  font-weight: 500;
-  color: #6b7280;
+.gmap-popup-price small {
+  font-size: 11px;
+  font-weight: 400;
+  color: #70757a;
   margin-left: 1px;
 }
 
-/* ── Cluster Icons ── */
-.custom-cluster-icon {
-  background: transparent !important;
-}
-
-.cluster-icon {
+/* ── Popup Add to Cart button ── */
+.gmap-popup-cart-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #111827, #1f2937);
-  color: white;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  border: none;
+  border-radius: 8px;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.gmap-popup-cart-btn:hover {
+  background: #1565c0;
+}
+.gmap-popup-cart-btn--added {
+  background: #34a853;
+  cursor: default;
+}
+.gmap-popup-cart-btn--added:hover {
+  background: #34a853;
+}
+.gmap-popup-cart-btn:disabled {
+  opacity: 1;
+}
+.gmap-popup-cart-btn svg {
+  flex-shrink: 0;
+}
+
+/* ── Cluster Icons (Google Maps style) ── */
+.gmap-cluster-wrapper {
+  background: transparent !important;
+}
+
+.gmap-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  background: #e8eaed;
+  color: #202124;
   font-size: 13px;
   font-weight: 700;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25), 0 0 0 3px rgba(255,255,255,0.85);
-  transition: transform 0.2s ease;
+  font-family: Roboto, Arial, sans-serif;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+  border: none;
+  transition: all 0.12s ease;
   cursor: pointer;
+  padding: 2px 6px;
 }
 
-.cluster-icon:hover {
-  transform: scale(1.12);
+.gmap-cluster:hover {
+  background: #202124;
+  color: #fff;
 }
 
-.cluster-icon span {
+.gmap-cluster span {
   line-height: 1;
 }
 
-/* ── Map container subtle inner shadow ── */
-.map-container::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 999;
-  box-shadow: inset 0 0 60px rgba(0,0,0,0.04);
-  border-radius: inherit;
+/* No inner shadow overlay — Google Maps doesn't have one */
+.gmap-container::after {
+  display: none;
 }
 
-/* ── Dark mode map overrides ── */
-.dark .voyager-map {
+/* ── Dark mode — keep Google Maps tiles readable ── */
+.dark .gmap-leaflet {
   background: #1a1a2e;
 }
 
-.dark .voyager-map .leaflet-control-zoom a {
-  background: rgba(30, 30, 50, 0.95) !important;
-  color: #e5e7eb !important;
-  border-bottom-color: rgba(255,255,255,0.08) !important;
+.dark .gmap-ctrl-btn,
+.dark .gmap-my-location,
+.dark .gmap-info-chip {
+  background: #2d2d44;
+  color: #c9ccd1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 
-.dark .popup-card-body {
-  background: #1f2937;
+.dark .gmap-layer-thumb {
+  border-color: #2d2d44;
+}
+.dark .gmap-layer-thumb-label {
+  color: #e8eaed;
 }
 
-.dark .popup-hotel-name {
-  color: #f3f4f6;
+.dark .gmap-popup .leaflet-popup-content-wrapper {
+  background: #2d2d44 !important;
+}
+.dark .gmap-popup .leaflet-popup-tip {
+  background: #2d2d44 !important;
+}
+.dark .gmap-popup-body {
+  background: #2d2d44;
+}
+.dark .gmap-popup-title {
+  color: #e8eaed;
+}
+.dark .gmap-popup-subtitle {
+  color: #9aa0a6;
+}
+.dark .gmap-popup-price {
+  color: #e8eaed;
+}
+.dark .gmap-popup-cart-btn {
+  background: #8ab4f8;
+  color: #202124;
+}
+.dark .gmap-popup-cart-btn:hover {
+  background: #aecbfa;
+}
+.dark .gmap-popup-cart-btn--added {
+  background: #81c995;
 }
 
-.dark .popup-hotel-location {
-  color: #9ca3af;
+.dark .gmap-price-pin span {
+  background: #2d2d44;
+  color: #e8eaed;
+}
+.dark .gmap-price-pin-icon {
+  color: #f87171;
+}
+.dark .gmap-price-pin::after {
+  background: #2d2d44;
+}
+.dark .gmap-price-pin--active span {
+  background: #e8eaed;
+  color: #202124;
+}
+.dark .gmap-price-pin--active::after {
+  background: #e8eaed;
+}
+.dark .gmap-price-pin:hover span {
+  background: #e8eaed;
+  color: #202124;
+}
+.dark .gmap-price-pin:hover::after {
+  background: #e8eaed;
 }
 
-.dark .rich-popup .leaflet-popup-content-wrapper {
-  background: #1f2937 !important;
+.dark .gmap-cluster {
+  background: #3c4043;
+  color: #e8eaed;
 }
 
-.dark .rich-popup .leaflet-popup-tip {
-  background: #1f2937 !important;
+.dark .gmap-leaflet .leaflet-control-zoom a {
+  background: #2d2d44 !important;
+  color: #c9ccd1 !important;
+  border-bottom-color: #3c3c5c !important;
+}
+.dark .gmap-leaflet .leaflet-control-zoom a:hover {
+  background: #3c3c5c !important;
 }
 
-.dark .map-container::after {
-  box-shadow: inset 0 0 80px rgba(0,0,0,0.2);
+/* ══════════════════════════════════════════════════
+   Flight Route Animations
+   ══════════════════════════════════════════════════ */
+
+/* Animated arc line — flowing dashes origin → destination */
+.flight-arc-animated {
+  stroke-dasharray: 16 8;
+  animation: flight-dash 1s linear infinite;
+}
+
+@keyframes flight-dash {
+  to {
+    stroke-dashoffset: 48;
+  }
+}
+
+/* Airport marker */
+.flight-airport-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.flight-airport-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.flight-airport-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.35);
+}
+
+.flight-airport-origin .flight-airport-dot {
+  background: #34a853;
+}
+
+.flight-airport-dest .flight-airport-dot {
+  background: #ea4335;
+}
+
+.flight-airport-label {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Google Sans', Roboto, Arial, sans-serif;
+  color: #3c4043;
+  background: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  text-transform: capitalize;
+}
+
+/* Plane icon */
+.flight-plane-icon {
+  background: transparent !important;
+  border: none !important;
+  transition: transform 40ms linear;
+}
+
+/* ── Airport marker on hotel tab ── */
+.hotel-airport-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.hotel-airport-pin {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a73e8;
+  color: #fff;
+  font-family: 'Google Sans', Roboto, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 14px 7px 10px;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(26,115,232,0.4);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hotel-airport-pin::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #1a73e8;
+}
+
+.hotel-airport-pin:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(26,115,232,0.5);
+}
+
+.hotel-airport-pin svg {
+  flex-shrink: 0;
+}
+
+.dark .hotel-airport-pin {
+  background: #8ab4f8;
+  color: #202124;
+  box-shadow: 0 2px 8px rgba(138,180,248,0.4);
+}
+
+.dark .hotel-airport-pin::after {
+  border-top-color: #8ab4f8;
+}
+
+.flight-plane-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  box-shadow: 0 2px 8px rgba(26,115,232,0.35);
+}
+
+.flight-plane-wrapper svg {
+  transition: transform 0.15s ease;
+}
+
+/* Dark mode flight elements */
+.dark .flight-airport-label {
+  background: #2d2d44;
+  color: #e8eaed;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.dark .flight-airport-dot {
+  border-color: #2d2d44;
+}
+
+.dark .flight-plane-wrapper {
+  background: #2d2d44;
+  box-shadow: 0 2px 8px rgba(138, 180, 248, 0.35);
+}
+
+.dark .flight-plane-wrapper svg {
+  fill: #8ab4f8;
+}
+
+.dark .flight-arc-animated {
+  stroke: #8ab4f8 !important;
 }

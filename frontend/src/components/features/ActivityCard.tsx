@@ -4,10 +4,19 @@ import { Activity } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Clock, DollarSign, MapPin, Heart } from "lucide-react";
+import { Star, Clock, MapPin, Heart, ClipboardList, Check, Plus, Minus } from "lucide-react";
 import Image from "next/image";
 
-export function ActivityCard({ activity }: { activity: Activity }) {
+interface ActivityCardProps {
+  activity: Activity;
+  cartQuantity?: number;
+  onAddToCart?: (activity: Activity) => void;
+  onRemoveFromCart?: (activityId: string) => void;
+}
+
+export function ActivityCard({ activity, cartQuantity = 0, onAddToCart, onRemoveFromCart }: ActivityCardProps) {
+  const isInCart = cartQuantity > 0;
+
   return (
     <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 border-none ring-1 ring-slate-200/60 bg-white h-full flex flex-col">
       <div className="relative h-48 overflow-hidden shrink-0">
@@ -44,7 +53,7 @@ export function ActivityCard({ activity }: { activity: Activity }) {
       
       <CardContent className="pt-4 px-5 pb-5 flex-1 flex flex-col space-y-3">
         <div className="space-y-1">
-            <h3 className="font-bold text-slate-800 text-lg leading-tight line-clamp-1 group-hover:text-blue-600 transition-colors">
+            <h3 className="font-bold text-slate-800 text-lg leading-tight line-clamp-1 group-hover:text-teal-600 transition-colors">
                 {activity.name}
             </h3>
             <div className="flex items-center gap-3 text-xs text-slate-500">
@@ -63,9 +72,38 @@ export function ActivityCard({ activity }: { activity: Activity }) {
           {activity.description}
         </p>
         
-        <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-9 mt-2 shadow-lg shadow-slate-200">
-            Book Experience
-        </Button>
+        {isInCart ? (
+          <div className="flex items-center gap-2 mt-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-xl border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
+              onClick={() => onRemoveFromCart?.(activity.id)}
+            >
+              <Minus className="w-4 h-4" />
+            </Button>
+            <div className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
+              <Check className="w-3.5 h-3.5" />
+              <span className="text-sm font-semibold">{cartQuantity} added</span>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-xl border-slate-200 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 transition-colors"
+              onClick={() => onAddToCart?.(activity)}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-9 mt-2 shadow-lg shadow-slate-200 gap-2"
+            onClick={() => onAddToCart?.(activity)}
+          >
+            <ClipboardList className="w-4 h-4" />
+            Add to Itinerary
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

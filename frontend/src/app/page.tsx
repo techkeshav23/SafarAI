@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Navbar } from "@/components/Navbar";
-import { RefinedFilters, FilterData, FilterInitialData } from "@/components/RefinedFilters";
-import { MapView } from "@/components/MapView";
-import { ChatAssistant } from "@/components/ChatAssistant";
-import { ResultsPanel } from "@/components/ResultsPanel";
+import { Navbar } from "@/components/layout/Navbar";
+import { RefinedFilters, FilterData, FilterInitialData } from "@/components/layout/RefinedFilters";
+import { MapView } from "@/components/features/MapView";
+import { ChatAssistant } from "@/components/features/ChatAssistant";
+import { SafarBot } from "@/components/features/SafarBot";
+import { ResultsPanel } from "@/components/layout/ResultsPanel";
 import { searchTravel, searchHotels, searchFlights } from "@/lib/api";
-import { TripPlan } from "@/lib/types";
+import { TripPlan, CartItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { HeroLanding } from "@/components/HeroLanding";
+import { HeroLanding } from "@/components/layout/HeroLanding";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("flights");
@@ -20,6 +21,53 @@ export default function Home() {
   const [mapCenter, setMapCenter] = useState<[number, number] | undefined>(undefined);
   const [mapZoom, setMapZoom] = useState<number | undefined>(undefined);
   const [showHero, setShowHero] = useState(true);
+
+  // ── Cart State ──
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  const handleAddToCart = useCallback((item: CartItem) => {
+    setCart(prev => {
+      // For flights: only 1 allowed — replace any existing flight
+      if (item.type === "flight") {
+        const withoutFlights = prev.filter(c => c.type !== "flight");
+        return [...withoutFlights, { ...item, quantity: 1 }];
+      }
+      // For hotels: only 1 allowed — replace any existing hotel
+      if (item.type === "hotel") {
+        const withoutHotels = prev.filter(c => c.type !== "hotel");
+        return [...withoutHotels, { ...item, quantity: 1 }];
+      }
+      // For other types: add normally (no duplicates)
+      const existing = prev.find(c => c.id === item.id);
+      if (existing) {
+        return prev.map(c =>
+          c.id === item.id
+            ? { ...c, quantity: c.quantity + 1 }
+            : c
+        );
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+  }, []);
+
+  const handleRemoveFromCart = useCallback((itemId: string) => {
+    setCart(prev => prev.filter(c => c.id !== itemId));
+  }, []);
+
+  const handleUpdateCartQty = useCallback((itemId: string, delta: number) => {
+    setCart(prev => prev.map(c => {
+      if (c.id !== itemId) return c;
+      const newQty = c.quantity + delta;
+      return newQty > 0 ? { ...c, quantity: newQty } : c;
+    }).filter(c => c.quantity > 0));
+  }, []);
+
+  const handleClearCart = useCallback(() => {
+    setCart([]);
+  }, []);
+
+  const cartTotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0);
+  const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
   // Keep the original (unfiltered) trip plan so filters work client-side
   const originalTripPlan = useRef<TripPlan | null>(null);
@@ -247,6 +295,8 @@ export default function Home() {
   );
 
   const mapHotels = tripPlan?.hotels || [];
+  const mapFlights = tripPlan?.flights || [];
+  const mapOrigin = tripPlan?.origin || null;
   const mapDestination = tripPlan?.destination || null;
 
   return (
@@ -256,7 +306,9 @@ export default function Home() {
       <Navbar 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
-        transparent={showHero} 
+        transparent={showHero}
+        cartCount={cartCount}
+        cartTotal={cartTotal}
       />
 
       {/* 2. Horizontal Filter Bar (Only visible when not in Hero mode) */}
@@ -277,6 +329,12 @@ export default function Home() {
                     isLoading={isLoading} 
                     flightsLoading={flightsLoading}
                     onHotelDateChange={handleHotelDateUpdate}
+                    cart={cart}
+                    onAddToCart={handleAddToCart}
+                    onRemoveFromCart={handleRemoveFromCart}
+                    onUpdateCartQty={handleUpdateCartQty}
+                    onClearCart={handleClearCart}
+                    onActiveTabChange={setActiveTab}
                 />
             </div>
         )}
@@ -304,31 +362,36 @@ export default function Home() {
                     <div className="absolute w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping opacity-50" />
                   </div>
                   <span className="text-sm font-bold text-gray-800 tracking-tight">
-                    Exploring {mapDestination}
+                    {activeTab === "flights" && mapFlights.length > 0
+                      ? `${mapOrigin || mapFlights[0]?.origin || 'Origin'} → ${mapDestination}`
+                      : `Exploring ${mapDestination}`
+                    }
                   </span>
                   <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                    {mapHotels.filter(h => h.latitude && h.longitude).length} pins
+                    {activeTab === "flights" && mapFlights.length > 0
+                      ? `${mapFlights.length} flight${mapFlights.length > 1 ? 's' : ''}`
+                      : `${mapHotels.filter(h => h.latitude && h.longitude).length} pins`
+                    }
                   </span>
                 </div>
               )}
               
               <MapView 
-                hotels={mapHotels} 
+                hotels={mapHotels}
+                flights={mapFlights}
+                origin={mapOrigin}
                 destination={mapDestination} 
                 center={mapCenter}
                 zoom={mapZoom}
+                activeTab={activeTab}
+                onAddToCart={handleAddToCart}
+                cart={cart}
               />
             </div>
           )}
         </main>
-
-        {/* Chat Assistant (Always Floating) */}
-        <ChatAssistant 
-          onSearchResults={handleSearchResults} 
-          onLoadingChange={handleLoadingChange}
-          isLoading={isLoading} 
-        />
       </div>
+      <SafarBot />
     </div>
   );
 }

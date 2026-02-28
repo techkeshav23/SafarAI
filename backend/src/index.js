@@ -1,42 +1,42 @@
 /**
- * Voyehack Backend - Intelligent Travel Search API
- * Node.js/Express server
+ * SafarAI Backend — Express API entry point.
  */
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+import config from "./config/index.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { rateLimiter } from "./middleware/rateLimiter.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 import searchRouter from "./routes/search.js";
 import bookingRouter from "./routes/booking.js";
 
-// Note: agentService.js calls dotenv.config() at module level,
-// so env vars are available by the time any route handler executes.
-// All service modules read env vars lazily (inside functions, not at top level).
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 8000;
 
-// Middleware
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-  })
-);
+// ─── Middleware ───────────────────────────
+app.use(cors({
+  origin: config.corsOrigin,
+  credentials: true,
+}));
 app.use(express.json());
+app.use(requestLogger);
+app.use("/api", rateLimiter);
 
-// Routes
+// ─── Routes ──────────────────────────────
 app.use("/api/search", searchRouter);
 app.use("/api/booking", bookingRouter);
 
-app.get("/", (req, res) => {
-  res.json({ message: "Voyehack Travel Search API is running" });
+app.get("/", (_req, res) => {
+  res.json({ name: "SafarAI Travel Search API", status: "running" });
 });
 
-app.get("/health", (req, res) => {
-  res.json({ status: "healthy" });
+app.get("/health", (_req, res) => {
+  res.json({ status: "healthy", uptime: process.uptime() });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Voyehack API running on http://localhost:${PORT}`);
+// ─── Global Error Handler (must be last) ─
+app.use(errorHandler);
+
+// ─── Start ───────────────────────────────
+app.listen(config.port, () => {
+  console.log(`🚀 SafarAI API running on http://localhost:${config.port} [${config.nodeEnv}]`);
 });

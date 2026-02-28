@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Voyehack - AI Travel Search",
+  title: "SafarAI - AI Travel Search",
   description: "Intelligent unified travel search powered by AI",
 };
 

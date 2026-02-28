@@ -1,21 +1,38 @@
-# Voyehack Backend
+# SafarAI Backend
+
+Express API server powering the SafarAI travel search engine.
 
 ## Setup
-1. Copy `.env.example` to `.env`
-2. Fill in the required API keys:
-   - `GEMINI_API_KEY`: Google Gemini API Key
-   - `TBO_USERNAME` / `TBO_PASSWORD`: TBO Hotel API credentials
-   - `AMADEUS_API_KEY` / `AMADEUS_API_SECRET`: Amadeus Flight API credentials
-3. Install dependencies:
+
+1. Copy `.env.example` → `.env` and fill in your API keys
+2. Install dependencies:
    ```bash
    npm install
    ```
-4. Start the server:
+3. Start the server:
    ```bash
    npm run dev
    ```
 
-## API Endpoints
-- `POST /api/search`: Integrated Agentic Search
-- `POST /api/search/hotels`: Direct Hotel Search
-- `POST /api/search/flights`: Direct Flight Search
+## Project Structure
+
+```
+src/
+├── config/          # Centralized env/config
+├── middleware/       # Error handler, rate limiter, logger
+├── routes/          # Express route handlers
+│   ├── search.js    # /api/search/*
+│   └── booking.js   # /api/booking/*
+├── services/        # Business logic
+│   ├── agent/       # Gemini agentic engine (prompts, tools, helpers)
+│   ├── tboApi.js    # TBO Hotels integration
+│   ├── tboAirApi.js # TBO Air integration
+│   ├── cityResolver.js
+│   ├── intentParser.js
+│   ├── mockHotels.js
+│   └── searchEngine.js  # Activity search
+├── utils/           # Shared utilities (transforms, date helpers)
+└── index.js         # Entry point
+data/                # Static datasets (cities, activities)
+scripts/             # Dev/debug scripts
+```

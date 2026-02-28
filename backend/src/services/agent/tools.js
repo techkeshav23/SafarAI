@@ -1,24 +1,27 @@
 // ─── Tool Executors ─────────────────────────────────────────────
+import config from "../../config/index.js";
 import { searchActivities } from "../searchEngine.js";
-import { searchTboFlights } from "../tboAirApi.js"; // Switched to TBO
-import { searchHotels as tboSearchHotels, getHotelCodeBatch, getCachedHotelDetailsMap } from "../tboApi.js";
+import { searchTboFlights } from "../tboAirApi.js";
+import { searchHotels as tboSearchHotels, getHotelCodeBatch } from "../tboApi.js";
 import { generateMockHotels } from "../mockHotels.js";
 import { getCityCode } from "../cityResolver.js";
 import {
   getDefaultCheckIn,
   getDefaultCheckOut,
+  getDefaultFlightDate,
+  validateAndFixDate,
   transformTboHotel,
   fetchHotelDetailsMap,
 } from "./helpers.js";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 export async function executeSearchHotels(args, collected) {
   const destination = args.destination || "";
   console.log(`[Agent Tool] executeSearchHotels called for: ${destination}`);
-  const checkIn = args.check_in || getDefaultCheckIn();
-  const checkOut = args.check_out || getDefaultCheckOut(checkIn);
+  const rawCheckIn = args.check_in || getDefaultCheckIn();
+  const rawCheckOut = args.check_out || getDefaultCheckOut(rawCheckIn);
+  // Validate dates — fix invalid ones like Feb 29 in non-leap years
+  const checkIn = validateAndFixDate(rawCheckIn) || getDefaultCheckIn();
+  const checkOut = validateAndFixDate(rawCheckOut) || getDefaultCheckOut(checkIn);
 
   let hotels = [];
   let source = "mock";
@@ -49,7 +52,7 @@ export async function executeSearchHotels(args, collected) {
             adults: args.adults || 2,
             children: 0,
             childrenAges: [],
-            nationality: args.nationality || process.env.DEFAULT_NATIONALITY || "IN",
+            nationality: args.nationality || config.defaults.nationality,
             rooms: args.rooms || 1,
           });
 
@@ -162,10 +165,14 @@ export async function executeSearchFlights(args, collected) {
   const origin =
     args.origin ||
     collected.origin ||
-    process.env.DEFAULT_ORIGIN ||
-    "Delhi";
-  const departureDate =
-    args.departure_date || collected.check_in || getDefaultCheckIn();
+    config.defaults.origin ||    "Delhi";
+  const rawDepartureDate =
+    args.departure_date || collected.check_in || getDefaultFlightDate();
+  const departureDate = validateAndFixDate(rawDepartureDate) || getDefaultFlightDate();
+
+  // Validate return date if provided
+  const rawReturnDate = args.return_date || null;
+  const returnDate = rawReturnDate ? (validateAndFixDate(rawReturnDate) || null) : null;
 
   let flights = [];
   let source = "tbo_air"; // Switched to TBO
@@ -176,7 +183,7 @@ export async function executeSearchFlights(args, collected) {
       origin,
       destination,
       departureDate,
-      returnDate: args.return_date || null,
+      returnDate,
       adults: args.adults || 1,
       maxResults: 250,
     });
@@ -279,8 +286,8 @@ export async function executePlanTrip(args, collected) {
   // 1. Run Hotel Search (Fast)
   const hotelRes = await executeSearchHotels({
        destination: args.destination,
-       check_in: args.start_date,
-       check_out: args.end_date,
+       check_in: validateAndFixDate(args.start_date) || undefined,
+       check_out: validateAndFixDate(args.end_date) || undefined,
        adults: args.adults,
        total_budget: args.total_budget
      }, collected);
@@ -291,8 +298,8 @@ export async function executePlanTrip(args, collected) {
   collected.flightParams = {
        origin: args.origin || collected.origin,
        destination: args.destination,
-       departureDate: args.start_date,
-       returnDate: args.end_date,
+       departureDate: validateAndFixDate(args.start_date) || undefined,
+       returnDate: validateAndFixDate(args.end_date) || undefined,
        adults: args.adults,
        total_budget: args.total_budget
   };

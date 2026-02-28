@@ -1,12 +1,13 @@
 {
-  "name": "voyehack-backend",
+  "name": "safarai-backend",
   "version": "1.0.0",
-  "description": "Voyehack Travel Search API - Node.js/Express",
+  "description": "SafarAI Travel Search API — Node.js/Express",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "start": "NODE_ENV=production node src/index.js",
+    "scan-cities": "node scripts/scan_cities.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -14,8 +15,6 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.0",
     "fuse.js": "^7.1.0",
-    "multer": "^1.4.5-lts.1",
-    "node-fetch": "^3.3.2",
-    "openai": "^4.67.0"
+    "node-fetch": "^3.3.2"
   }
 }

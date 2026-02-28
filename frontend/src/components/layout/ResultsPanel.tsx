@@ -1,10 +1,9 @@
 "use client";
 
-import { TripPlan, Flight } from "@/lib/types";
-import { HotelCard } from "./HotelCard";
-import { FlightCard } from "./FlightCard";
-import { FlightFilters } from "./FlightFilters";
-import { ActivityCard } from "./ActivityCard";
+import { TripPlan, Flight, CartItem } from "@/lib/types";
+import { HotelCard } from "../features/HotelCard";
+import { FlightCard } from "../features/FlightCard";
+import { FlightFilters } from "../features/FlightFilters";
 import {
   X,
   ChevronLeft,
@@ -12,7 +11,6 @@ import {
   Loader2,
   Plane,
   Hotel,
-  MapPin,
   Sparkles,
   Calendar,
   Filter,
@@ -21,7 +19,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Star
+  Star,
+  ClipboardList,
+  Trash2,
+  Plus,
+  Minus
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,12 @@ interface ResultsPanelProps {
   tripPlan: TripPlan | null;
   className?: string;
   onHotelDateChange?: (checkIn: string, checkOut: string) => Promise<void>;
+  cart?: CartItem[];
+  onAddToCart?: (item: CartItem) => void;
+  onRemoveFromCart?: (itemId: string) => void;
+  onUpdateCartQty?: (itemId: string, delta: number) => void;
+  onClearCart?: () => void;
+  onActiveTabChange?: (tab: string) => void;
 }
 
 export function ResultsPanel({
@@ -46,8 +54,18 @@ export function ResultsPanel({
   tripPlan,
   className,
   onHotelDateChange,
+  cart = [],
+  onAddToCart,
+  onRemoveFromCart,
+  onUpdateCartQty,
+  onClearCart,
+  onActiveTabChange,
 }: ResultsPanelProps) {
-  const [activeTab, setActiveTab] = useState<"flights" | "hotels" | "activities">("flights");
+  const [activeTab, setActiveTabInternal] = useState<"flights" | "hotels" | "cart">("flights");
+  const setActiveTab = (tab: "flights" | "hotels" | "cart") => {
+    setActiveTabInternal(tab);
+    onActiveTabChange?.(tab);
+  };
   const [collapsed, setCollapsed] = useState(false);
   const [filteredFlights, setFilteredFlights] = useState<Flight[]>([]);
   
@@ -124,12 +142,12 @@ export function ResultsPanel({
 
   const totalHotels = tripPlan?.hotels?.length || 0;
   const totalFlights = tripPlan?.flights?.length || 0;
-  const totalActivities = tripPlan?.activities?.length || 0;
+  const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
   const tabs = [
     { id: "flights", label: `Flights`, count: flightsLoading ? undefined : totalFlights, icon: flightsLoading ? Loader2 : Plane },
     { id: "hotels", label: `Hotels`, count: totalHotels, icon: Hotel },
-    { id: "activities", label: `Activities`, count: totalActivities, icon: MapPin },
+    { id: "cart", label: `Itinerary`, count: cartCount, icon: ClipboardList },
   ];
   
   // Custom renderer for ReactMarkdown to handle 'children' prop
@@ -225,7 +243,12 @@ export function ResultsPanel({
                                 <div className="space-y-3">
                                     {filteredFlights.length > 0 ? (
                                         filteredFlights.map((flight, idx) => (
-                                            <FlightCard key={idx} flight={flight} />
+                                            <FlightCard
+                                              key={idx}
+                                              flight={flight}
+                                              isInCart={cart.some(c => c.id === `flight-${flight.id}`)}
+                                              onAddToCart={onAddToCart}
+                                            />
                                         ))
                                     ) : (
                                         <div className="text-center py-10 text-muted-foreground text-sm">
@@ -356,7 +379,13 @@ export function ResultsPanel({
                                 <div className="space-y-3">
                                     {sortedHotels.length > 0 ? (
                                         sortedHotels.map((hotel, idx) => (
-                                            <HotelCard key={hotel.id || idx} hotel={hotel} index={idx} />
+                                            <HotelCard
+                                              key={hotel.id || idx}
+                                              hotel={hotel}
+                                              index={idx}
+                                              isInCart={cart.some(c => c.id === `hotel-${hotel.id}`)}
+                                              onAddToCart={onAddToCart}
+                                            />
                                         ))
                                     ) : totalHotels > 0 ? (
                                         <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
@@ -376,18 +405,100 @@ export function ResultsPanel({
                 )}
 
 
-                {/* Activities */}
-                {(activeTab === 'activities') && totalActivities > 0 && (
+                {/* Itinerary */}
+                {(activeTab === 'cart') && (
                    <div>
-                        <div className="flex items-center justify-between mb-3 mt-6">
-                            <h3 className="font-semibold flex items-center gap-2"><MapPin className="w-4 h-4 text-rose-500" /> Activities</h3>
-                            <Badge variant="secondary" className="text-xs font-normal">{totalActivities} places</Badge>
+                        <div className="flex items-center justify-between mb-4 mt-6">
+                            <h3 className="font-semibold flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 text-emerald-600" /> Your Itinerary
+                            </h3>
+                            {cart.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 h-7 px-2"
+                                onClick={onClearCart}
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" /> Clear All
+                              </Button>
+                            )}
                         </div>
-                        <div className="space-y-3">
-                            {tripPlan?.activities?.map((activity, idx) => (
-                                <ActivityCard key={idx} activity={activity} />
+
+                        {cart.length === 0 ? (
+                          <div className="text-center py-16 text-muted-foreground">
+                            <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                            <p className="font-medium">Your itinerary is empty</p>
+                            <p className="text-xs mt-1 opacity-70">Add flights or hotels to build your trip.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {cart.map((item) => (
+                              <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white hover:shadow-sm transition-shadow">
+                                {/* Image */}
+                                {item.image_url && (
+                                  <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-slate-100">
+                                    <img
+                                      src={item.image_url}
+                                      alt={item.name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                  </div>
+                                )}
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 font-semibold uppercase">
+                                      {item.type === 'hotel' ? '🏨' : item.type === 'flight' ? '✈️' : '🎯'} {item.type}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm font-semibold text-slate-800 truncate">{item.name}</p>
+                                  <p className="text-[11px] text-slate-500 truncate">{item.details}</p>
+                                </div>
+                                {/* Quantity & Price */}
+                                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                  <p className="text-sm font-bold text-slate-800">
+                                    ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                                  </p>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      className="w-6 h-6 rounded-md border border-slate-200 flex items-center justify-center hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors text-slate-500"
+                                      onClick={() => {
+                                        if (item.quantity <= 1) onRemoveFromCart?.(item.id);
+                                        else onUpdateCartQty?.(item.id, -1);
+                                      }}
+                                    >
+                                      {item.quantity <= 1 ? <Trash2 className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                                    </button>
+                                    <span className="text-xs font-semibold w-5 text-center">{item.quantity}</span>
+                                    <button
+                                      className="w-6 h-6 rounded-md border border-slate-200 flex items-center justify-center hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 transition-colors text-slate-500"
+                                      onClick={() => onUpdateCartQty?.(item.id, 1)}
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
                             ))}
-                        </div>
+
+                            {/* Itinerary Total */}
+                            <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-cyan-50 border border-emerald-200">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm font-semibold text-emerald-800">
+                                  Total ({cartCount} {cartCount === 1 ? 'item' : 'items'})
+                                </span>
+                                <span className="text-lg font-bold text-emerald-700">
+                                  ₹{cart.reduce((s, c) => s + c.price * c.quantity, 0).toLocaleString('en-IN')}
+                                </span>
+                              </div>
+                              <Button className="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10 font-semibold shadow-lg shadow-emerald-200 gap-2">
+                                <ClipboardList className="w-4 h-4" />
+                                Confirm Itinerary
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                    </div>
                 )}
             </div>
@@ -396,13 +507,13 @@ export function ResultsPanel({
 
         {/* Toggle Button */}
         <div className={cn(
-            "absolute top-4 z-50 transition-all duration-300 flex items-center justify-center",
-            collapsed ? "left-0 translate-x-1" : "left-[436px] lg:left-[496px]"
+            "absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-300",
+            collapsed ? "left-0" : "left-[calc(100%-1px)] md:left-[749px] lg:left-[899px]"
         )}>
              <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full shadow-lg bg-background text-foreground hover:bg-muted border border-border h-8 w-8 flex items-center justify-center"
+                className="rounded-r-full rounded-l-none shadow-md bg-background text-foreground hover:bg-muted border border-l-0 border-border h-10 w-6 flex items-center justify-center"
                 onClick={() => setCollapsed(!collapsed)}
                 title={collapsed ? "Show Results" : "Hide Results"}
             >

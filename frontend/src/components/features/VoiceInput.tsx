@@ -83,7 +83,7 @@ export function VoiceInput({ onTranscription, disabled, className }: VoiceInputP
       onClick={toggleListening}
       disabled={disabled}
       className={cn(
-        "relative p-2 rounded-full transition-all duration-300 flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-blue-500/50",
+        "relative p-2 rounded-full transition-all duration-300 flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-teal-500/50",
         isListening 
           ? "bg-red-50 text-red-500 hover:bg-red-100 ring-2 ring-red-500/20" 
           : "hover:bg-slate-200 text-slate-400 hover:text-slate-600",
