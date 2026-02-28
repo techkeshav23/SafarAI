@@ -8,7 +8,6 @@ IMPORTANT: ${new Date().getFullYear()} is ${new Date().getFullYear() % 4 === 0 &
 YOUR CAPABILITIES:
 - Search for hotels in any destination worldwide (with real-time pricing)
 - Search for flights between cities (with real airline data)
-- Find activities, tours, and experiences at destinations
 - Understand follow-up questions using conversation context
 
 BEHAVIOR RULES:
@@ -122,27 +121,6 @@ export const functionDeclarations = [
         total_budget: {
            type: "NUMBER",
            description: "Max budget filter",
-        },
-      },
-      required: ["destination"],
-    },
-  },
-  {
-    name: "search_activities",
-    description:
-      "Search for activities, tours, sightseeing, and things to do at a destination. Use this when the user wants experiences or is planning activities.",
-    parameters: {
-      type: "OBJECT",
-      properties: {
-        destination: {
-          type: "STRING",
-          description: "City or destination name",
-        },
-        themes: {
-          type: "ARRAY",
-          items: { type: "STRING" },
-          description:
-            "Activity themes: adventure, cultural, food, nature, nightlife, etc.",
         },
       },
       required: ["destination"],

@@ -64,20 +64,6 @@ export interface Flight {
   source?: string;
 }
 
-export interface Activity {
-  id: string;
-  name: string;
-  city: string;
-  country: string;
-  description: string;
-  price: number;
-  duration_hours: number;
-  category: string;
-  rating: number;
-  image_url: string;
-  match_score?: number;
-}
-
 export interface TripPlan {
   summary: string;
   steps?: AgentStep[];
@@ -99,8 +85,6 @@ export interface TripPlan {
   flight_search_params?: unknown; // Could be any object passed to search_flights
   hotels?: Hotel[];
   flights?: Flight[];
-  activities?: Activity[];
-  
   dates_suggestion?: string;
   total_estimated_cost?: number;
   ai_reasoning?: string;
@@ -122,11 +106,11 @@ export interface ChatMessage {
 // ── Cart Types ──
 export interface CartItem {
   id: string;
-  type: "hotel" | "flight" | "activity";
+  type: "hotel" | "flight";
   name: string;
   price: number;
   quantity: number;
   image_url?: string;
   details: string; // e.g. "Mumbai, 3-star" or "DEL → BOM, 2h 30m"
-  originalData: Hotel | Flight | Activity;
+  originalData: Hotel | Flight;
 }

@@ -72,7 +72,7 @@ const FEATURES = [
     icon: Sparkles,
     title: "AI-Powered Planning",
     description:
-      "Describe your dream trip in plain language. Our AI curates flights, hotels, and activities tailored to your preferences — in seconds.",
+      "Describe your dream trip in plain language. Our AI curates flights and hotels tailored to your preferences — in seconds.",
   },
   {
     icon: Shield,
@@ -106,7 +106,7 @@ const STEPS = [
   {
     step: "02",
     title: "Compare options",
-    desc: "Our AI searches 200+ providers instantly and presents the best flights, hotels and activities.",
+    desc: "Our AI searches 200+ providers instantly and presents the best flights and hotels.",
   },
   {
     step: "03",

@@ -40,7 +40,7 @@ const LOADING_STEP_TEXTS = [
   "Understanding your travel request...",
   "Searching for the best hotels...",
   "Finding available flights...",
-  "Discovering activities & experiences...",
+  "Discovering experiences...",
   "Comparing prices and ratings...",
   "Preparing your personalized results...",
 ];

@@ -8,7 +8,6 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { rateLimiter } from "./middleware/rateLimiter.js";
 import { requestLogger } from "./middleware/requestLogger.js";
 import searchRouter from "./routes/search.js";
-import bookingRouter from "./routes/booking.js";
 
 const app = express();
 
@@ -23,7 +22,6 @@ app.use("/api", rateLimiter);
 
 // ─── Routes ──────────────────────────────
 app.use("/api/search", searchRouter);
-app.use("/api/booking", bookingRouter);
 
 app.get("/", (_req, res) => {
   res.json({ name: "SafarAI Travel Search API", status: "running" });

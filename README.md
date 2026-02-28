@@ -1,6 +1,6 @@
 # SafarAI — AI-Powered Travel Search Engine
 
-An intelligent travel search platform that uses Google Gemini (function calling) to search flights, hotels, and activities from natural language queries.
+An intelligent travel search platform that uses Google Gemini (function calling) to search flights and hotels from natural language queries.
 
 ## Architecture
 
@@ -18,7 +18,7 @@ An intelligent travel search platform that uses Google Gemini (function calling)
 │  ├── Gemini 2.0 Flash — agentic tool-calling engine    │
 │  ├── TBO Hotels API (real-time hotel pricing)          │
 │  ├── TBO Air API (real-time flight search)             │
-│  └── Activity search (local dataset + Fuse.js)         │
+│  └── City resolver (fuzzy matching with Fuse.js)        │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -100,10 +100,6 @@ SafarAI/
 | `POST` | `/api/search/` | Agentic search (Gemini + tools) |
 | `POST` | `/api/search/hotels` | Direct hotel search |
 | `POST` | `/api/search/flights` | Direct flight search |
-| `POST` | `/api/booking/prebook` | Pre-book a hotel room |
-| `POST` | `/api/booking/confirm` | Confirm booking |
-| `POST` | `/api/booking/detail` | Get booking details |
-| `POST` | `/api/booking/cancel` | Cancel booking |
 | `GET`  | `/health` | Health check |
 
 ## Environment Variables

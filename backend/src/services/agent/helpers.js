@@ -58,11 +58,6 @@ export function estimateCost(collected) {
   if (collected.flights.length > 0) {
     total += collected.flights[0].price;
   }
-  if (collected.activities.length > 0) {
-    total += collected.activities
-      .slice(0, 3)
-      .reduce((s, a) => s + a.price, 0);
-  }
   return Math.round(total * 100) / 100;
 }
 
@@ -79,8 +74,6 @@ export function getStepText(toolName, args) {
         const orig = args?.origin || "your city";
         return `Finding flights from ${orig} to ${dest}...`;
       }
-      case "search_activities":
-        return `Discovering activities in ${dest}...`;
       default:
         return "Processing...";
     }

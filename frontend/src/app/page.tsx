@@ -244,7 +244,7 @@ export default function Home() {
           const query = `hotels in ${filters.to}${filters.from ? ` from ${filters.from}` : ""} check-in ${filters.departureDate} check-out ${filters.returnDate}`;
           const freshResult = await searchTravel(query);
           if (freshResult) {
-            // Merge: keep original flights/activities, replace hotels with fresh results
+            // Merge: keep original flights, replace hotels with fresh results
             workingPlan = {
               ...base,
               hotels: freshResult.hotels || [],

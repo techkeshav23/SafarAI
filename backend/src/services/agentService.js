@@ -18,7 +18,6 @@ import {
   executeTool,
   executeSearchHotels,
   executeSearchFlights,
-  executeSearchActivities,
 } from "./agent/tools.js";
 import {
   buildMapActions,
@@ -43,7 +42,6 @@ export async function runAgent(query, history = []) {
   const collected = {
     hotels: [],
     flights: [],
-    activities: [],
     destination: null,
     origin: null,
     check_in: null,
@@ -115,7 +113,7 @@ export async function runAgent(query, history = []) {
       // We just compose a simple success message for the UI.
       
       // If we found results, update the summary to be helpful but generic
-      if (collected.flights.length > 0 || collected.hotels.length > 0 || collected.activities.length > 0) {
+      if (collected.flights.length > 0 || collected.hotels.length > 0) {
           summary = `I found ${collected.flights.length ? collected.flights.length + " flights" : ""} ${collected.flights.length && collected.hotels.length ? "and" : ""} ${collected.hotels.length ? collected.hotels.length + " hotels" : ""} for your trip. Check them out below!`;
       } else {
           summary = "I looked for options but couldn't find exact matches right now. Try adjusting your dates or destination.";
@@ -142,7 +140,6 @@ export async function runAgent(query, history = []) {
       flights: collected.flights,
       fetch_flights_async: collected.fetchFlightsAsync || false,
       flight_search_params: collected.flightParams || null,
-      activities: collected.activities,
       actions,
       total_estimated_cost: estimateCost(collected),
       ai_reasoning: `Agent completed in ${iterations} tool-call round(s)`,
@@ -161,7 +158,7 @@ async function runFallback(query, steps = [], collected = {}) {
   // Ensure lists exist
   if (!collected.hotels) collected.hotels = [];
   if (!collected.flights) collected.flights = [];
-  if (!collected.activities) collected.activities = [];
+
 
   try {
     // Use keyword-based intent parsing (works without Gemini)
@@ -178,12 +175,6 @@ async function runFallback(query, steps = [], collected = {}) {
       tool: "search_flights",
       text: `Finding flights to ${destination || "your destination"}...`,
     });
-    steps.push({
-      type: "tool_call",
-      tool: "search_activities",
-      text: "Looking for activities...",
-    });
-
     // Parallel search execution
     await Promise.all([
       executeSearchHotels(
@@ -203,10 +194,6 @@ async function runFallback(query, steps = [], collected = {}) {
           origin: intent.origin,
           departure_date: intent.check_in,
         },
-        collected
-      ),
-      executeSearchActivities(
-        { destination, themes: intent.themes },
         collected
       ),
     ]);
@@ -233,7 +220,6 @@ async function runFallback(query, steps = [], collected = {}) {
       check_out: collected.check_out || intent.check_out,
       hotels: collected.hotels,
       flights: collected.flights,
-      activities: collected.activities,
       actions: buildMapActions(collected),
       total_estimated_cost: estimateCost(collected),
       ai_reasoning: `Fallback search. Intent: ${JSON.stringify(intent)}`,
@@ -250,7 +236,6 @@ async function runFallback(query, steps = [], collected = {}) {
       destination: "Multiple",
       hotels: [],
       flights: [],
-      activities: [],
       actions: [],
       total_estimated_cost: 0,
       ai_reasoning: `Error: ${err.message}`,

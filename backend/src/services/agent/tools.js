@@ -1,6 +1,5 @@
 // ─── Tool Executors ─────────────────────────────────────────────
 import config from "../../config/index.js";
-import { searchActivities } from "../searchEngine.js";
 import { searchTboFlights } from "../tboAirApi.js";
 import { searchHotels as tboSearchHotels, getHotelCodeBatch } from "../tboApi.js";
 import { generateMockHotels } from "../mockHotels.js";
@@ -254,29 +253,6 @@ export async function executeSearchFlights(args, collected) {
   };
 }
 
-export async function executeSearchActivities(args, collected) {
-  const destination = args.destination || "";
-  const activities = searchActivities({
-    destination,
-    themes: args.themes || [],
-  });
-
-  collected.activities = activities;
-  if (!collected.destination) collected.destination = destination;
-
-  return {
-    count: activities.length,
-    activities: activities.slice(0, 5).map((a) => ({
-      name: a.name,
-      city: a.city,
-      price: a.price,
-      duration_hours: a.duration_hours,
-      category: a.category,
-      rating: a.rating,
-    })),
-  };
-}
-
 // ─── Super Tool Executor ────────────────────────────────────────
 
 // For "plan_trip", we run ONLY hotel search to be fast, and return a flag for client-side flight fetching
@@ -320,8 +296,6 @@ export async function executeTool(name, args, collected) {
         return await executeSearchHotels(args, collected);
       case "search_flights":
         return await executeSearchFlights(args, collected);
-      case "search_activities":
-        return await executeSearchActivities(args, collected);
       default:
         return { error: `Unknown tool: ${name}` };
     }

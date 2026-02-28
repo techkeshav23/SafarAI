@@ -117,53 +117,6 @@ export async function searchHotels({
   return tboPost("search", payload);
 }
 
-/* ────────── Booking Flow ────────── */
-
-export async function preBook(bookingCode) {
-  return tboPost("PreBook", { BookingCode: bookingCode, PaymentMode: "Limit" });
-}
-
-export async function book(bookingCode, {
-  customerDetails = [],
-  clientReferenceId = "",
-  bookingReferenceId = "",
-  totalFare = 0,
-  emailId = "",
-  phoneNumber = "",
-  bookingType = "Voucher",
-} = {}) {
-  return tboPost("Book", {
-    BookingCode: bookingCode,
-    CustomerDetails: customerDetails,
-    ...(clientReferenceId && { ClientReferenceId: clientReferenceId }),
-    ...(bookingReferenceId && { BookingReferenceId: bookingReferenceId }),
-    ...(totalFare && { TotalFare: totalFare }),
-    ...(emailId && { EmailId: emailId }),
-    ...(phoneNumber && { PhoneNumber: phoneNumber }),
-    BookingType: bookingType,
-    PaymentMode: "Limit",
-  });
-}
-
-export async function getBookingDetail({ confirmationNumber, bookingReferenceId } = {}) {
-  const payload = { PaymentMode: "Limit" };
-  if (confirmationNumber) payload.ConfirmationNumber = confirmationNumber;
-  if (bookingReferenceId) payload.BookingReferenceId = bookingReferenceId;
-  return tboPost("BookingDetail", payload);
-}
-
-export async function cancelBooking(confirmationNumber) {
-  return tboPost("Cancel", { ConfirmationNumber: confirmationNumber });
-}
-
-export async function getBookingsByDate(fromDate, toDate) {
-  return tboPost("BookingDetailsBasedOnDate", { FromDate: fromDate, ToDate: toDate });
-}
-
-export async function generateVoucher(bookingId) {
-  return tboPost("GenerateVoucher", { BookingId: bookingId });
-}
-
 /* ────────── Hotel Code & Details Caching ────────── */
 
 const cityCodesCache = new Map();   // cityCode → { codes: string[], time: number }
@@ -335,24 +288,6 @@ export function getCachedHotelDetailsMap(cityCode) {
     return cached.map;
   }
   return {};
-}
-
-/**
- * Find hotel details in cache by hotel code (linear scan across all cached cities).
- * Useful when we don't know the city code.
- */
-export function findCachedHotelDetails(hotelCode) {
-    if (!hotelCode) return null;
-    const cleanCode = String(hotelCode);
-    
-    for (const [cityCode, cached] of cityDetailsCache.entries()) {
-        if (Date.now() - cached.time < CACHE_TTL) {
-            if (cached.map[cleanCode]) {
-                return cached.map[cleanCode];
-            }
-        }
-    }
-    return null;
 }
 
 /**
